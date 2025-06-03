@@ -10,7 +10,7 @@ var (
 
 // EncodeBER - упаковка инта в формат произвольной длины, совместимый с perl pack 'w' (aka ULEB128).
 //
-// Списано с небольшими правками из go-iproto/sbox
+// Списано с небольшими правками из github.com/funny-falcon/go-iproto/sbox
 func EncodeBER(buf []byte, n uint64) []byte {
 	var l int
 
@@ -56,7 +56,7 @@ func EncodeBER(buf []byte, n uint64) []byte {
 // DecodeBER - распаковка инта из формата произвольной длины, совместимого с perl unpack 'w' (aka ULEB128).
 // tail - остаток буфера после распаковки.
 //
-// Списано с небольшими правками из go-iproto/sbox
+// Списано с небольшими правками из github.com/funny-falcon/go-iproto/sbox
 func DecodeBER(ber []byte) (res uint64, tail []byte, err error) {
 	for i, b := range ber {
 		res = (res << 7) | uint64(b&0x7F)

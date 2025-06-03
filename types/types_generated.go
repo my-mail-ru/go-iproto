@@ -42,7 +42,7 @@ func (recv_Bytes *Bytes) UnmarshalIProto(buf []byte) ([]byte, error) {
 	}
 	len_recv_Bytes := int(u64)
 	if len(buf) < len_recv_Bytes {
-		return nil, fmt.Errorf("MarshalIProto: *recv_Bytes: %w: %d < %d", iproto.ErrOverflow, len(buf), len_recv_Bytes)
+		return nil, fmt.Errorf("UnmarshalIProto: *recv_Bytes: %w: %d < %d", iproto.ErrOverflow, len(buf), len_recv_Bytes)
 	}
 	*recv_Bytes = Bytes(slices.Clone(buf[:len_recv_Bytes]))
 	buf = buf[len_recv_Bytes:]
@@ -55,7 +55,7 @@ func (recvFloat32 Float32) MarshalIProto(buf []byte) ([]byte, error) {
 }
 func (recv_Float32 *Float32) UnmarshalIProto(buf []byte) ([]byte, error) {
 	if len(buf) < 4 {
-		return nil, fmt.Errorf("MarshalIProto: Bits_recv_Float32: %w: %d < %d", iproto.ErrOverflow, len(buf), 4)
+		return nil, fmt.Errorf("UnmarshalIProto: Bits_recv_Float32: %w: %d < %d", iproto.ErrOverflow, len(buf), 4)
 	}
 	bits_recv_Float32 := binary.LittleEndian.Uint32(buf)
 	buf = buf[4:]
@@ -69,7 +69,7 @@ func (recvFloat64 Float64) MarshalIProto(buf []byte) ([]byte, error) {
 }
 func (recv_Float64 *Float64) UnmarshalIProto(buf []byte) ([]byte, error) {
 	if len(buf) < 8 {
-		return nil, fmt.Errorf("MarshalIProto: Bits_recv_Float64: %w: %d < %d", iproto.ErrOverflow, len(buf), 8)
+		return nil, fmt.Errorf("UnmarshalIProto: Bits_recv_Float64: %w: %d < %d", iproto.ErrOverflow, len(buf), 8)
 	}
 	bits_recv_Float64 := binary.LittleEndian.Uint64(buf)
 	buf = buf[8:]
@@ -82,7 +82,7 @@ func (recvInt16 Int16) MarshalIProto(buf []byte) ([]byte, error) {
 }
 func (recv_Int16 *Int16) UnmarshalIProto(buf []byte) ([]byte, error) {
 	if len(buf) < 2 {
-		return nil, fmt.Errorf("MarshalIProto: *recv_Int16: %w: %d < %d", iproto.ErrOverflow, len(buf), 2)
+		return nil, fmt.Errorf("UnmarshalIProto: *recv_Int16: %w: %d < %d", iproto.ErrOverflow, len(buf), 2)
 	}
 	*recv_Int16 = Int16(binary.LittleEndian.Uint16(buf))
 	buf = buf[2:]
@@ -94,7 +94,7 @@ func (recvInt32 Int32) MarshalIProto(buf []byte) ([]byte, error) {
 }
 func (recv_Int32 *Int32) UnmarshalIProto(buf []byte) ([]byte, error) {
 	if len(buf) < 4 {
-		return nil, fmt.Errorf("MarshalIProto: *recv_Int32: %w: %d < %d", iproto.ErrOverflow, len(buf), 4)
+		return nil, fmt.Errorf("UnmarshalIProto: *recv_Int32: %w: %d < %d", iproto.ErrOverflow, len(buf), 4)
 	}
 	*recv_Int32 = Int32(binary.LittleEndian.Uint32(buf))
 	buf = buf[4:]
@@ -106,7 +106,7 @@ func (recvInt64 Int64) MarshalIProto(buf []byte) ([]byte, error) {
 }
 func (recv_Int64 *Int64) UnmarshalIProto(buf []byte) ([]byte, error) {
 	if len(buf) < 8 {
-		return nil, fmt.Errorf("MarshalIProto: *recv_Int64: %w: %d < %d", iproto.ErrOverflow, len(buf), 8)
+		return nil, fmt.Errorf("UnmarshalIProto: *recv_Int64: %w: %d < %d", iproto.ErrOverflow, len(buf), 8)
 	}
 	*recv_Int64 = Int64(binary.LittleEndian.Uint64(buf))
 	buf = buf[8:]
@@ -118,7 +118,7 @@ func (recvInt8 Int8) MarshalIProto(buf []byte) ([]byte, error) {
 }
 func (recv_Int8 *Int8) UnmarshalIProto(buf []byte) ([]byte, error) {
 	if len(buf) < 1 {
-		return nil, fmt.Errorf("MarshalIProto: *recv_Int8: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+		return nil, fmt.Errorf("UnmarshalIProto: *recv_Int8: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
 	}
 	*recv_Int8 = Int8(buf[0])
 	buf = buf[1:]
@@ -146,7 +146,7 @@ func (recv_Slice *Slice) UnmarshalIProto(buf []byte) ([]byte, error) {
 	}
 	len_recv_Slice := int(u64)
 	if len(buf) < len_recv_Slice {
-		return nil, fmt.Errorf("MarshalIProto: *recv_Slice: %w: %d < %d", iproto.ErrOverflow, len(buf), len_recv_Slice)
+		return nil, fmt.Errorf("UnmarshalIProto: *recv_Slice: %w: %d < %d", iproto.ErrOverflow, len(buf), len_recv_Slice)
 	}
 	*recv_Slice = make([]iproto.MarshalerUnmarshaler, len_recv_Slice)
 	for i_recv_Slice := 0; i_recv_Slice < len_recv_Slice; i_recv_Slice++ {
@@ -173,7 +173,7 @@ func (recv_String *String) UnmarshalIProto(buf []byte) ([]byte, error) {
 	}
 	len_recv_String := int(u64)
 	if len(buf) < len_recv_String {
-		return nil, fmt.Errorf("MarshalIProto: *recv_String: %w: %d < %d", iproto.ErrOverflow, len(buf), len_recv_String)
+		return nil, fmt.Errorf("UnmarshalIProto: *recv_String: %w: %d < %d", iproto.ErrOverflow, len(buf), len_recv_String)
 	}
 	*recv_String = String(buf[:len_recv_String])
 	buf = buf[len_recv_String:]
@@ -185,7 +185,7 @@ func (recvUint16 Uint16) MarshalIProto(buf []byte) ([]byte, error) {
 }
 func (recv_Uint16 *Uint16) UnmarshalIProto(buf []byte) ([]byte, error) {
 	if len(buf) < 2 {
-		return nil, fmt.Errorf("MarshalIProto: *recv_Uint16: %w: %d < %d", iproto.ErrOverflow, len(buf), 2)
+		return nil, fmt.Errorf("UnmarshalIProto: *recv_Uint16: %w: %d < %d", iproto.ErrOverflow, len(buf), 2)
 	}
 	*recv_Uint16 = Uint16(binary.LittleEndian.Uint16(buf))
 	buf = buf[2:]
@@ -197,7 +197,7 @@ func (recvUint32 Uint32) MarshalIProto(buf []byte) ([]byte, error) {
 }
 func (recv_Uint32 *Uint32) UnmarshalIProto(buf []byte) ([]byte, error) {
 	if len(buf) < 4 {
-		return nil, fmt.Errorf("MarshalIProto: *recv_Uint32: %w: %d < %d", iproto.ErrOverflow, len(buf), 4)
+		return nil, fmt.Errorf("UnmarshalIProto: *recv_Uint32: %w: %d < %d", iproto.ErrOverflow, len(buf), 4)
 	}
 	*recv_Uint32 = Uint32(binary.LittleEndian.Uint32(buf))
 	buf = buf[4:]
@@ -209,7 +209,7 @@ func (recvUint64 Uint64) MarshalIProto(buf []byte) ([]byte, error) {
 }
 func (recv_Uint64 *Uint64) UnmarshalIProto(buf []byte) ([]byte, error) {
 	if len(buf) < 8 {
-		return nil, fmt.Errorf("MarshalIProto: *recv_Uint64: %w: %d < %d", iproto.ErrOverflow, len(buf), 8)
+		return nil, fmt.Errorf("UnmarshalIProto: *recv_Uint64: %w: %d < %d", iproto.ErrOverflow, len(buf), 8)
 	}
 	*recv_Uint64 = Uint64(binary.LittleEndian.Uint64(buf))
 	buf = buf[8:]
@@ -221,7 +221,7 @@ func (recvUint8 Uint8) MarshalIProto(buf []byte) ([]byte, error) {
 }
 func (recv_Uint8 *Uint8) UnmarshalIProto(buf []byte) ([]byte, error) {
 	if len(buf) < 1 {
-		return nil, fmt.Errorf("MarshalIProto: *recv_Uint8: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+		return nil, fmt.Errorf("UnmarshalIProto: *recv_Uint8: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
 	}
 	*recv_Uint8 = Uint8(buf[0])
 	buf = buf[1:]

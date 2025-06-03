@@ -30,7 +30,7 @@ full-lint:
 
 .PHONY: format
 format:
-	find . -name '*.go' | xargs goimports -local github.com/my-mail-ru/ -l -w
+	find . -name '*.go' | xargs $(GO) tool goimports -local github.com/my-mail-ru/ -l -w
 
 .PHONY: test
 test:

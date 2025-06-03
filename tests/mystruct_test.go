@@ -35,6 +35,8 @@ func TestMyStructMarshalUnmarshal(t *testing.T) {
 		},
 		String:                "test",
 		DefString:             "Test",
+		DflString:             "TestDflString",
+		SignedLenString:       "TestSignedLenString",
 		StrSlice:              []string{"foo", "bar"},
 		Timestamp:             1733506469,
 		Float:                 3.14,

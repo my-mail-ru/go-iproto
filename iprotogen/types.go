@@ -54,7 +54,7 @@ func (sl Slice) EmitUnmarshaler(x ast.Expr, block []ast.Stmt) []ast.Stmt {
 		emitVarAssign(
 			x,
 			exprCall(identMake, sl.TypeExpr, lenVar),
-			emitBoundCheck(exprLenBuf, token.LSS, lenVar, astToSourceUpper(x), block), // anti-DoS check
+			emitBoundCheck(exprLenBuf, token.LSS, lenVar, false, astToSourceUpper(x), block), // anti-DoS check
 		),
 		stmtFor(counterVar, lenVar, body),
 	)
@@ -94,7 +94,7 @@ func (arr Array) EmitUnmarshaler(x ast.Expr, block []ast.Stmt) []ast.Stmt {
 	}
 
 	return append(
-		emitBoundCheck(exprLenBuf, token.LSS, arr.Len, astToSourceUpper(x), block), // anti-DoS check
+		emitBoundCheck(exprLenBuf, token.LSS, arr.Len, false, astToSourceUpper(x), block), // anti-DoS check
 		stmtFor(counterVar, arr.Len, body),
 	)
 }
@@ -162,7 +162,7 @@ func (m Map) EmitUnmarshaler(x ast.Expr, block []ast.Stmt) []ast.Stmt {
 		emitVarAssign(
 			x,
 			exprCall(identMake, m.TypeExpr, lenVar),
-			emitBoundCheck(exprLenBuf, token.LSS, lenVar, astToSourceUpper(x), block), // anti-DoS check
+			emitBoundCheck(exprLenBuf, token.LSS, lenVar, false, astToSourceUpper(x), block), // anti-DoS check
 		),
 		stmtFor(counterVar, lenVar, body),
 	)
@@ -186,11 +186,11 @@ func (i Integer) EmitMarshaler(x ast.Expr, block []ast.Stmt) []ast.Stmt {
 	}
 
 	if i.Min != 0 {
-		block = emitBoundCheck(x, token.LSS, litInt64(i.Min), astToSourceUpper(x), block)
+		block = emitBoundCheck(x, token.LSS, litInt64(i.Min), true, astToSourceUpper(x), block)
 	}
 
 	if i.Max != 0 {
-		block = emitBoundCheck(x, token.GTR, litUint64(i.Max), astToSourceUpper(x), block)
+		block = emitBoundCheck(x, token.GTR, litUint64(i.Max), true, astToSourceUpper(x), block)
 	}
 
 	appendArgs := []ast.Expr{identBuf}
@@ -241,7 +241,7 @@ func (i Integer) EmitUnmarshaler(x ast.Expr, block []ast.Stmt) []ast.Stmt {
 		return emitVarAssign(x, exprCall(i.TypeExpr, identU64), block)
 	}
 
-	block = emitBoundCheck(exprLenBuf, token.LSS, litInt(i.Size), astToSourceUpper(x), block)
+	block = emitBoundCheck(exprLenBuf, token.LSS, litInt(i.Size), false, astToSourceUpper(x), block)
 
 	expr := ast.Expr(exprBuf0) // x = Type(buf[0])
 
@@ -334,7 +334,7 @@ func (b Bool) EmitMarshaler(x ast.Expr, block []ast.Stmt) []ast.Stmt {
 }
 
 func (b Bool) EmitUnmarshaler(x ast.Expr, block []ast.Stmt) []ast.Stmt {
-	block = emitBoundCheck(exprLenBuf, token.LSS, lit1, astToSourceUpper(x), block)
+	block = emitBoundCheck(exprLenBuf, token.LSS, lit1, false, astToSourceUpper(x), block)
 
 	block = emitVarAssign(x, &ast.BinaryExpr{
 		X:  exprBuf0,
@@ -359,7 +359,7 @@ func (s StringOrBytes) EmitMarshaler(x ast.Expr, block []ast.Stmt) []ast.Stmt {
 func (s StringOrBytes) EmitUnmarshaler(x ast.Expr, block []ast.Stmt) []ast.Stmt {
 	lenVar := varFromExpr(x, "len")
 	block = s.LenType.EmitUnmarshaler(lenVar, block)
-	block = emitBoundCheck(exprLenBuf, token.LSS, lenVar, astToSourceUpper(x), block)
+	block = emitBoundCheck(exprLenBuf, token.LSS, lenVar, false, astToSourceUpper(x), block)
 
 	subslice := ast.Expr(&ast.SliceExpr{X: identBuf, High: lenVar})
 
@@ -387,7 +387,7 @@ func (ba ByteArray) EmitMarshaler(x ast.Expr, block []ast.Stmt) []ast.Stmt {
 }
 
 func (ba ByteArray) EmitUnmarshaler(x ast.Expr, block []ast.Stmt) []ast.Stmt {
-	block = emitBoundCheck(exprLenBuf, token.LSS, ba.Len, astToSourceUpper(x), block)
+	block = emitBoundCheck(exprLenBuf, token.LSS, ba.Len, false, astToSourceUpper(x), block)
 
 	block = emitVarAssign(x, exprCall(ba.TypeExpr, &ast.SliceExpr{
 		X:    identBuf,

@@ -41,6 +41,8 @@ type MyStruct struct {
 	Ints                  Ints
 	String                string                         `iproto:"ber"`
 	DefString             iprototypes.String             `iproto:"u8"`
+	DflString             string                         //
+	SignedLenString       string                         `iproto:"i8"`
 	StrSlice              []string                       `iproto:"u16"`
 	Timestamp             UnixTime                       //
 	Float                 float32                        //

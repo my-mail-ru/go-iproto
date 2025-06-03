@@ -1,63 +1,77 @@
-# More info on config here: https://golangci-lint.run/usage/configuration/
+version: "2"
 run:
-  timeout: 5m
   issues-exit-code: 1
   tests: true
-
 output:
   formats:
-    - format: colored-line-number
-  print-issued-lines: true
-  print-linter-name: true
-
-linters-settings:
-  govet:
-    enable-all: true
-  dupl:
-    threshold: 100
-  goconst:
-    min-len: 2
-    min-occurrences: 2
-  gocritic:
-    enabled-checks:
-      - nilValReturn
-
+    text:
+      path: stdout
+      print-linter-name: true
+      print-issued-lines: true
 linters:
   enable:
-    - revive
-    - errcheck
-    - ineffassign
-    - typecheck
-    - goconst
-    - gosec
-    - goimports
-    - gosimple
-    - unused
-    - staticcheck # enable before push
-    - gocyclo
     - dupl
-    - gocognit
-    - prealloc
-    - perfsprint
     - gochecknoinits
-    - wsl
+    - gocognit
+    - goconst
     - gocritic
-    - wastedassign
+    - gocyclo
+    - gosec
     - misspell
-
-issues:
-  exclude:
-    - fieldalignment
-    - G115
-  exclude-rules:
-    - path: _test\.go
-      linters:
-        - gocyclo
-        - gocognit
-        - gosec
-        - errcheck
-        - dupl
-        - perfsprint
-    - path: mock.go
-      linters:
-        - gosec
+    - perfsprint
+    - prealloc
+    - revive
+    - wastedassign
+    - wsl
+  settings:
+    dupl:
+      threshold: 100
+    goconst:
+      min-len: 2
+      min-occurrences: 2
+    gocritic:
+      enabled-checks:
+        - nilValReturn
+    govet:
+      enable-all: true
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - linters:
+          - dupl
+          - errcheck
+          - gocognit
+          - gocyclo
+          - gosec
+          - perfsprint
+        path: _test\.go
+      - linters:
+          - gosec
+        path: mock.go
+      - linters:
+          - govet
+        text: fieldalignment
+      - linters:
+          - gosec
+        text: "G115:"
+      - linters:
+          - staticcheck
+        text: "QF1008:"
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
+    - goimports
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

@@ -55,6 +55,16 @@ func (recvMyStruct MyStruct) MarshalIProto(buf []byte) ([]byte, error) {
 	}
 	buf = append(buf, byte(len(recvMyStruct.DefString)))
 	buf = append(buf, recvMyStruct.DefString...)
+	buf = append(buf, byte(len(recvMyStruct.DflString)), byte(len(recvMyStruct.DflString)>>8), byte(len(recvMyStruct.DflString)>>16), byte(len(recvMyStruct.DflString)>>24))
+	buf = append(buf, recvMyStruct.DflString...)
+	if len(recvMyStruct.SignedLenString) < -128 {
+		return nil, fmt.Errorf("MarshalIProto: Len(recvMyStruct.SignedLenString): %w: %d < %d", iproto.ErrOverflow, len(recvMyStruct.SignedLenString), -128)
+	}
+	if len(recvMyStruct.SignedLenString) > 127 {
+		return nil, fmt.Errorf("MarshalIProto: Len(recvMyStruct.SignedLenString): %w: %d > %d", iproto.ErrOverflow, len(recvMyStruct.SignedLenString), 127)
+	}
+	buf = append(buf, byte(len(recvMyStruct.SignedLenString)))
+	buf = append(buf, recvMyStruct.SignedLenString...)
 	if len(recvMyStruct.StrSlice) > 65535 {
 		return nil, fmt.Errorf("MarshalIProto: Len(recvMyStruct.StrSlice): %w: %d > %d", iproto.ErrOverflow, len(recvMyStruct.StrSlice), 65535)
 	}
@@ -250,12 +260,12 @@ func (recv_MyStruct *MyStruct) UnmarshalIProto(buf []byte) ([]byte, error) {
 	}
 	recv_MyStruct.Embedded.EmbeddedInt = int(u64)
 	if len(buf) < 4 {
-		return nil, fmt.Errorf("MarshalIProto: LenRecv_MyStruct_Embedded_EmbeddedString: %w: %d < %d", iproto.ErrOverflow, len(buf), 4)
+		return nil, fmt.Errorf("UnmarshalIProto: LenRecv_MyStruct_Embedded_EmbeddedString: %w: %d < %d", iproto.ErrOverflow, len(buf), 4)
 	}
 	lenRecv_MyStruct_Embedded_EmbeddedString := int(binary.LittleEndian.Uint32(buf))
 	buf = buf[4:]
 	if len(buf) < lenRecv_MyStruct_Embedded_EmbeddedString {
-		return nil, fmt.Errorf("MarshalIProto: Recv_MyStruct.Embedded.EmbeddedString: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_Embedded_EmbeddedString)
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.Embedded.EmbeddedString: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_Embedded_EmbeddedString)
 	}
 	recv_MyStruct.Embedded.EmbeddedString = string(buf[:lenRecv_MyStruct_Embedded_EmbeddedString])
 	buf = buf[lenRecv_MyStruct_Embedded_EmbeddedString:]
@@ -270,57 +280,57 @@ func (recv_MyStruct *MyStruct) UnmarshalIProto(buf []byte) ([]byte, error) {
 	}
 	recv_MyStruct.Ints.InnerInt = innerpkg.InnerInt(u64)
 	if len(buf) < 1 {
-		return nil, fmt.Errorf("MarshalIProto: Recv_MyStruct.Ints.Int8: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.Ints.Int8: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
 	}
 	recv_MyStruct.Ints.Int8 = int8(buf[0])
 	buf = buf[1:]
 	if len(buf) < 1 {
-		return nil, fmt.Errorf("MarshalIProto: Recv_MyStruct.Ints.DefInt8: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.Ints.DefInt8: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
 	}
 	recv_MyStruct.Ints.DefInt8 = iprototypes.Int8(buf[0])
 	buf = buf[1:]
 	if len(buf) < 1 {
-		return nil, fmt.Errorf("MarshalIProto: Recv_MyStruct.Ints.Uint8: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.Ints.Uint8: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
 	}
 	recv_MyStruct.Ints.Uint8 = buf[0]
 	buf = buf[1:]
 	if len(buf) < 2 {
-		return nil, fmt.Errorf("MarshalIProto: Recv_MyStruct.Ints.Uint16: %w: %d < %d", iproto.ErrOverflow, len(buf), 2)
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.Ints.Uint16: %w: %d < %d", iproto.ErrOverflow, len(buf), 2)
 	}
 	recv_MyStruct.Ints.Uint16 = binary.LittleEndian.Uint16(buf)
 	buf = buf[2:]
 	if len(buf) < 4 {
-		return nil, fmt.Errorf("MarshalIProto: Recv_MyStruct.Ints.Uint32: %w: %d < %d", iproto.ErrOverflow, len(buf), 4)
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.Ints.Uint32: %w: %d < %d", iproto.ErrOverflow, len(buf), 4)
 	}
 	recv_MyStruct.Ints.Uint32 = binary.LittleEndian.Uint32(buf)
 	buf = buf[4:]
 	if len(buf) < 8 {
-		return nil, fmt.Errorf("MarshalIProto: Recv_MyStruct.Ints.Uint64: %w: %d < %d", iproto.ErrOverflow, len(buf), 8)
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.Ints.Uint64: %w: %d < %d", iproto.ErrOverflow, len(buf), 8)
 	}
 	recv_MyStruct.Ints.Uint64 = binary.LittleEndian.Uint64(buf)
 	buf = buf[8:]
 	if len(buf) < 1 {
-		return nil, fmt.Errorf("MarshalIProto: Recv_MyStruct.Ints.DefUint8: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.Ints.DefUint8: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
 	}
 	recv_MyStruct.Ints.DefUint8 = iprototypes.Uint8(buf[0])
 	buf = buf[1:]
 	if len(buf) < 2 {
-		return nil, fmt.Errorf("MarshalIProto: Recv_MyStruct.Ints.DefUint16: %w: %d < %d", iproto.ErrOverflow, len(buf), 2)
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.Ints.DefUint16: %w: %d < %d", iproto.ErrOverflow, len(buf), 2)
 	}
 	recv_MyStruct.Ints.DefUint16 = iprototypes.Uint16(binary.LittleEndian.Uint16(buf))
 	buf = buf[2:]
 	if len(buf) < 4 {
-		return nil, fmt.Errorf("MarshalIProto: Recv_MyStruct.Ints.DefUint32: %w: %d < %d", iproto.ErrOverflow, len(buf), 4)
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.Ints.DefUint32: %w: %d < %d", iproto.ErrOverflow, len(buf), 4)
 	}
 	recv_MyStruct.Ints.DefUint32 = iprototypes.Uint32(binary.LittleEndian.Uint32(buf))
 	buf = buf[4:]
 	if len(buf) < 8 {
-		return nil, fmt.Errorf("MarshalIProto: Recv_MyStruct.Ints.DefUint64: %w: %d < %d", iproto.ErrOverflow, len(buf), 8)
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.Ints.DefUint64: %w: %d < %d", iproto.ErrOverflow, len(buf), 8)
 	}
 	recv_MyStruct.Ints.DefUint64 = iprototypes.Uint64(binary.LittleEndian.Uint64(buf))
 	buf = buf[8:]
 	if len(buf) < 2 {
-		return nil, fmt.Errorf("MarshalIProto: Recv_MyStruct.Ints.Clipped: %w: %d < %d", iproto.ErrOverflow, len(buf), 2)
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.Ints.Clipped: %w: %d < %d", iproto.ErrOverflow, len(buf), 2)
 	}
 	recv_MyStruct.Ints.Clipped = uint32(binary.LittleEndian.Uint16(buf))
 	buf = buf[2:]
@@ -330,66 +340,86 @@ func (recv_MyStruct *MyStruct) UnmarshalIProto(buf []byte) ([]byte, error) {
 	}
 	lenRecv_MyStruct_String := int(u64)
 	if len(buf) < lenRecv_MyStruct_String {
-		return nil, fmt.Errorf("MarshalIProto: Recv_MyStruct.String: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_String)
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.String: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_String)
 	}
 	recv_MyStruct.String = string(buf[:lenRecv_MyStruct_String])
 	buf = buf[lenRecv_MyStruct_String:]
 	if len(buf) < 1 {
-		return nil, fmt.Errorf("MarshalIProto: LenRecv_MyStruct_DefString: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+		return nil, fmt.Errorf("UnmarshalIProto: LenRecv_MyStruct_DefString: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
 	}
 	lenRecv_MyStruct_DefString := int(buf[0])
 	buf = buf[1:]
 	if len(buf) < lenRecv_MyStruct_DefString {
-		return nil, fmt.Errorf("MarshalIProto: Recv_MyStruct.DefString: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_DefString)
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.DefString: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_DefString)
 	}
 	recv_MyStruct.DefString = iprototypes.String(buf[:lenRecv_MyStruct_DefString])
 	buf = buf[lenRecv_MyStruct_DefString:]
+	if len(buf) < 4 {
+		return nil, fmt.Errorf("UnmarshalIProto: LenRecv_MyStruct_DflString: %w: %d < %d", iproto.ErrOverflow, len(buf), 4)
+	}
+	lenRecv_MyStruct_DflString := int(binary.LittleEndian.Uint32(buf))
+	buf = buf[4:]
+	if len(buf) < lenRecv_MyStruct_DflString {
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.DflString: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_DflString)
+	}
+	recv_MyStruct.DflString = string(buf[:lenRecv_MyStruct_DflString])
+	buf = buf[lenRecv_MyStruct_DflString:]
+	if len(buf) < 1 {
+		return nil, fmt.Errorf("UnmarshalIProto: LenRecv_MyStruct_SignedLenString: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+	}
+	lenRecv_MyStruct_SignedLenString := int(int8(buf[0]))
+	buf = buf[1:]
+	if len(buf) < lenRecv_MyStruct_SignedLenString {
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.SignedLenString: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_SignedLenString)
+	}
+	recv_MyStruct.SignedLenString = string(buf[:lenRecv_MyStruct_SignedLenString])
+	buf = buf[lenRecv_MyStruct_SignedLenString:]
 	if len(buf) < 2 {
-		return nil, fmt.Errorf("MarshalIProto: LenRecv_MyStruct_StrSlice: %w: %d < %d", iproto.ErrOverflow, len(buf), 2)
+		return nil, fmt.Errorf("UnmarshalIProto: LenRecv_MyStruct_StrSlice: %w: %d < %d", iproto.ErrOverflow, len(buf), 2)
 	}
 	lenRecv_MyStruct_StrSlice := int(binary.LittleEndian.Uint16(buf))
 	buf = buf[2:]
 	if len(buf) < lenRecv_MyStruct_StrSlice {
-		return nil, fmt.Errorf("MarshalIProto: Recv_MyStruct.StrSlice: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_StrSlice)
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.StrSlice: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_StrSlice)
 	}
 	recv_MyStruct.StrSlice = make([]string, lenRecv_MyStruct_StrSlice)
 	for iRecv_MyStruct_StrSlice := 0; iRecv_MyStruct_StrSlice < lenRecv_MyStruct_StrSlice; iRecv_MyStruct_StrSlice++ {
 		if len(buf) < 4 {
-			return nil, fmt.Errorf("MarshalIProto: LenRecv_MyStruct_StrSlice_iRecv_MyStruct_StrSlice_: %w: %d < %d", iproto.ErrOverflow, len(buf), 4)
+			return nil, fmt.Errorf("UnmarshalIProto: LenRecv_MyStruct_StrSlice_iRecv_MyStruct_StrSlice_: %w: %d < %d", iproto.ErrOverflow, len(buf), 4)
 		}
 		lenRecv_MyStruct_StrSlice_iRecv_MyStruct_StrSlice_ := int(binary.LittleEndian.Uint32(buf))
 		buf = buf[4:]
 		if len(buf) < lenRecv_MyStruct_StrSlice_iRecv_MyStruct_StrSlice_ {
-			return nil, fmt.Errorf("MarshalIProto: Recv_MyStruct.StrSlice[iRecv_MyStruct_StrSlice]: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_StrSlice_iRecv_MyStruct_StrSlice_)
+			return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.StrSlice[iRecv_MyStruct_StrSlice]: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_StrSlice_iRecv_MyStruct_StrSlice_)
 		}
 		recv_MyStruct.StrSlice[iRecv_MyStruct_StrSlice] = string(buf[:lenRecv_MyStruct_StrSlice_iRecv_MyStruct_StrSlice_])
 		buf = buf[lenRecv_MyStruct_StrSlice_iRecv_MyStruct_StrSlice_:]
 	}
 	if len(buf) < 8 {
-		return nil, fmt.Errorf("MarshalIProto: Recv_MyStruct.Timestamp: %w: %d < %d", iproto.ErrOverflow, len(buf), 8)
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.Timestamp: %w: %d < %d", iproto.ErrOverflow, len(buf), 8)
 	}
 	recv_MyStruct.Timestamp = UnixTime(binary.LittleEndian.Uint64(buf))
 	buf = buf[8:]
 	if len(buf) < 4 {
-		return nil, fmt.Errorf("MarshalIProto: BitsRecv_MyStruct_Float: %w: %d < %d", iproto.ErrOverflow, len(buf), 4)
+		return nil, fmt.Errorf("UnmarshalIProto: BitsRecv_MyStruct_Float: %w: %d < %d", iproto.ErrOverflow, len(buf), 4)
 	}
 	bitsRecv_MyStruct_Float := binary.LittleEndian.Uint32(buf)
 	buf = buf[4:]
 	recv_MyStruct.Float = math.Float32frombits(bitsRecv_MyStruct_Float)
 	if len(buf) < 4 {
-		return nil, fmt.Errorf("MarshalIProto: BitsRecv_MyStruct_DefFloat: %w: %d < %d", iproto.ErrOverflow, len(buf), 4)
+		return nil, fmt.Errorf("UnmarshalIProto: BitsRecv_MyStruct_DefFloat: %w: %d < %d", iproto.ErrOverflow, len(buf), 4)
 	}
 	bitsRecv_MyStruct_DefFloat := binary.LittleEndian.Uint32(buf)
 	buf = buf[4:]
 	recv_MyStruct.DefFloat = iprototypes.Float32(math.Float32frombits(bitsRecv_MyStruct_DefFloat))
 	if len(buf) < 8 {
-		return nil, fmt.Errorf("MarshalIProto: BitsRecv_MyStruct_Double: %w: %d < %d", iproto.ErrOverflow, len(buf), 8)
+		return nil, fmt.Errorf("UnmarshalIProto: BitsRecv_MyStruct_Double: %w: %d < %d", iproto.ErrOverflow, len(buf), 8)
 	}
 	bitsRecv_MyStruct_Double := binary.LittleEndian.Uint64(buf)
 	buf = buf[8:]
 	recv_MyStruct.Double = math.Float64frombits(bitsRecv_MyStruct_Double)
 	if len(buf) < 8 {
-		return nil, fmt.Errorf("MarshalIProto: BitsRecv_MyStruct_DefDouble: %w: %d < %d", iproto.ErrOverflow, len(buf), 8)
+		return nil, fmt.Errorf("UnmarshalIProto: BitsRecv_MyStruct_DefDouble: %w: %d < %d", iproto.ErrOverflow, len(buf), 8)
 	}
 	bitsRecv_MyStruct_DefDouble := binary.LittleEndian.Uint64(buf)
 	buf = buf[8:]
@@ -400,27 +430,27 @@ func (recv_MyStruct *MyStruct) UnmarshalIProto(buf []byte) ([]byte, error) {
 	}
 	lenRecv_MyStruct_NestedSlice := int(u64)
 	if len(buf) < lenRecv_MyStruct_NestedSlice {
-		return nil, fmt.Errorf("MarshalIProto: Recv_MyStruct.NestedSlice: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_NestedSlice)
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.NestedSlice: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_NestedSlice)
 	}
 	recv_MyStruct.NestedSlice = make([][]string, lenRecv_MyStruct_NestedSlice)
 	for iRecv_MyStruct_NestedSlice := 0; iRecv_MyStruct_NestedSlice < lenRecv_MyStruct_NestedSlice; iRecv_MyStruct_NestedSlice++ {
 		if len(buf) < 2 {
-			return nil, fmt.Errorf("MarshalIProto: LenRecv_MyStruct_NestedSlice_iRecv_MyStruct_NestedSlice_: %w: %d < %d", iproto.ErrOverflow, len(buf), 2)
+			return nil, fmt.Errorf("UnmarshalIProto: LenRecv_MyStruct_NestedSlice_iRecv_MyStruct_NestedSlice_: %w: %d < %d", iproto.ErrOverflow, len(buf), 2)
 		}
 		lenRecv_MyStruct_NestedSlice_iRecv_MyStruct_NestedSlice_ := int(binary.LittleEndian.Uint16(buf))
 		buf = buf[2:]
 		if len(buf) < lenRecv_MyStruct_NestedSlice_iRecv_MyStruct_NestedSlice_ {
-			return nil, fmt.Errorf("MarshalIProto: Recv_MyStruct.NestedSlice[iRecv_MyStruct_NestedSlice]: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_NestedSlice_iRecv_MyStruct_NestedSlice_)
+			return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.NestedSlice[iRecv_MyStruct_NestedSlice]: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_NestedSlice_iRecv_MyStruct_NestedSlice_)
 		}
 		recv_MyStruct.NestedSlice[iRecv_MyStruct_NestedSlice] = make([]string, lenRecv_MyStruct_NestedSlice_iRecv_MyStruct_NestedSlice_)
 		for iRecv_MyStruct_NestedSlice_iRecv_MyStruct_NestedSlice_ := 0; iRecv_MyStruct_NestedSlice_iRecv_MyStruct_NestedSlice_ < lenRecv_MyStruct_NestedSlice_iRecv_MyStruct_NestedSlice_; iRecv_MyStruct_NestedSlice_iRecv_MyStruct_NestedSlice_++ {
 			if len(buf) < 1 {
-				return nil, fmt.Errorf("MarshalIProto: LenRecv_MyStruct_NestedSlice_iRecv_MyStruct_NestedSlice__iRecv_MyStruct_NestedSlice_iRecv_MyStruct_NestedSlice__: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+				return nil, fmt.Errorf("UnmarshalIProto: LenRecv_MyStruct_NestedSlice_iRecv_MyStruct_NestedSlice__iRecv_MyStruct_NestedSlice_iRecv_MyStruct_NestedSlice__: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
 			}
 			lenRecv_MyStruct_NestedSlice_iRecv_MyStruct_NestedSlice__iRecv_MyStruct_NestedSlice_iRecv_MyStruct_NestedSlice__ := int(buf[0])
 			buf = buf[1:]
 			if len(buf) < lenRecv_MyStruct_NestedSlice_iRecv_MyStruct_NestedSlice__iRecv_MyStruct_NestedSlice_iRecv_MyStruct_NestedSlice__ {
-				return nil, fmt.Errorf("MarshalIProto: Recv_MyStruct.NestedSlice[iRecv_MyStruct_NestedSlice][iRecv_MyStruct_NestedSlice_iRecv_MyStruct_NestedSlice_]: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_NestedSlice_iRecv_MyStruct_NestedSlice__iRecv_MyStruct_NestedSlice_iRecv_MyStruct_NestedSlice__)
+				return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.NestedSlice[iRecv_MyStruct_NestedSlice][iRecv_MyStruct_NestedSlice_iRecv_MyStruct_NestedSlice_]: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_NestedSlice_iRecv_MyStruct_NestedSlice__iRecv_MyStruct_NestedSlice_iRecv_MyStruct_NestedSlice__)
 			}
 			recv_MyStruct.NestedSlice[iRecv_MyStruct_NestedSlice][iRecv_MyStruct_NestedSlice_iRecv_MyStruct_NestedSlice_] = string(buf[:lenRecv_MyStruct_NestedSlice_iRecv_MyStruct_NestedSlice__iRecv_MyStruct_NestedSlice_iRecv_MyStruct_NestedSlice__])
 			buf = buf[lenRecv_MyStruct_NestedSlice_iRecv_MyStruct_NestedSlice__iRecv_MyStruct_NestedSlice_iRecv_MyStruct_NestedSlice__:]
@@ -432,7 +462,7 @@ func (recv_MyStruct *MyStruct) UnmarshalIProto(buf []byte) ([]byte, error) {
 	}
 	lenRecv_MyStruct_Bytes := int(u64)
 	if len(buf) < lenRecv_MyStruct_Bytes {
-		return nil, fmt.Errorf("MarshalIProto: Recv_MyStruct.Bytes: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_Bytes)
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.Bytes: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_Bytes)
 	}
 	recv_MyStruct.Bytes = slices.Clone(buf[:lenRecv_MyStruct_Bytes])
 	buf = buf[lenRecv_MyStruct_Bytes:]
@@ -442,7 +472,7 @@ func (recv_MyStruct *MyStruct) UnmarshalIProto(buf []byte) ([]byte, error) {
 	}
 	lenRecv_MyStruct_DefBytes := int(u64)
 	if len(buf) < lenRecv_MyStruct_DefBytes {
-		return nil, fmt.Errorf("MarshalIProto: Recv_MyStruct.DefBytes: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_DefBytes)
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.DefBytes: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_DefBytes)
 	}
 	recv_MyStruct.DefBytes = iprototypes.Bytes(slices.Clone(buf[:lenRecv_MyStruct_DefBytes]))
 	buf = buf[lenRecv_MyStruct_DefBytes:]
@@ -456,77 +486,77 @@ func (recv_MyStruct *MyStruct) UnmarshalIProto(buf []byte) ([]byte, error) {
 	}
 	recv_MyStruct.DefBER = iprototypes.BER(u64)
 	if len(buf) < 1 {
-		return nil, fmt.Errorf("MarshalIProto: Recv_MyStruct.PlainBoolT: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.PlainBoolT: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
 	}
 	recv_MyStruct.PlainBoolT = buf[0] != 0
 	buf = buf[1:]
 	if len(buf) < 1 {
-		return nil, fmt.Errorf("MarshalIProto: Recv_MyStruct.PlainBoolF: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.PlainBoolF: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
 	}
 	recv_MyStruct.PlainBoolF = buf[0] != 0
 	buf = buf[1:]
 	if len(buf) < 1 {
-		return nil, fmt.Errorf("MarshalIProto: Recv_MyStruct.CustomBoolT: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.CustomBoolT: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
 	}
 	recv_MyStruct.CustomBoolT = buf[0] != 48
 	buf = buf[1:]
 	if len(buf) < 1 {
-		return nil, fmt.Errorf("MarshalIProto: Recv_MyStruct.CustomBoolF: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.CustomBoolF: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
 	}
 	recv_MyStruct.CustomBoolF = buf[0] != 48
 	buf = buf[1:]
 	if len(buf) < 1 {
-		return nil, fmt.Errorf("MarshalIProto: Recv_MyStruct.CustomCharBoolT: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.CustomCharBoolT: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
 	}
 	recv_MyStruct.CustomCharBoolT = buf[0] != 102
 	buf = buf[1:]
 	if len(buf) < 1 {
-		return nil, fmt.Errorf("MarshalIProto: Recv_MyStruct.CustomCharBoolF: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.CustomCharBoolF: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
 	}
 	recv_MyStruct.CustomCharBoolF = buf[0] != 102
 	buf = buf[1:]
 	if len(buf) < 4 {
-		return nil, fmt.Errorf("MarshalIProto: Recv_MyStruct.IntArray: %w: %d < %d", iproto.ErrOverflow, len(buf), 4)
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.IntArray: %w: %d < %d", iproto.ErrOverflow, len(buf), 4)
 	}
 	for iRecv_MyStruct_IntArray := 0; iRecv_MyStruct_IntArray < 4; iRecv_MyStruct_IntArray++ {
 		if len(buf) < 4 {
-			return nil, fmt.Errorf("MarshalIProto: Recv_MyStruct.IntArray[iRecv_MyStruct_IntArray]: %w: %d < %d", iproto.ErrOverflow, len(buf), 4)
+			return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.IntArray[iRecv_MyStruct_IntArray]: %w: %d < %d", iproto.ErrOverflow, len(buf), 4)
 		}
 		recv_MyStruct.IntArray[iRecv_MyStruct_IntArray] = int(int32(binary.LittleEndian.Uint32(buf)))
 		buf = buf[4:]
 	}
 	if len(buf) < 16 {
-		return nil, fmt.Errorf("MarshalIProto: Recv_MyStruct.UUID: %w: %d < %d", iproto.ErrOverflow, len(buf), 16)
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.UUID: %w: %d < %d", iproto.ErrOverflow, len(buf), 16)
 	}
 	recv_MyStruct.UUID = UUID(buf[:16])
 	buf = buf[16:]
 	if len(buf) < 4 {
-		return nil, fmt.Errorf("MarshalIProto: LenRecv_MyStruct_MapStringString: %w: %d < %d", iproto.ErrOverflow, len(buf), 4)
+		return nil, fmt.Errorf("UnmarshalIProto: LenRecv_MyStruct_MapStringString: %w: %d < %d", iproto.ErrOverflow, len(buf), 4)
 	}
 	lenRecv_MyStruct_MapStringString := int(binary.LittleEndian.Uint32(buf))
 	buf = buf[4:]
 	if len(buf) < lenRecv_MyStruct_MapStringString {
-		return nil, fmt.Errorf("MarshalIProto: Recv_MyStruct.MapStringString: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_MapStringString)
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.MapStringString: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_MapStringString)
 	}
 	recv_MyStruct.MapStringString = make(map[string]string, lenRecv_MyStruct_MapStringString)
 	for iRecv_MyStruct_MapStringString := 0; iRecv_MyStruct_MapStringString < lenRecv_MyStruct_MapStringString; iRecv_MyStruct_MapStringString++ {
 		if len(buf) < 4 {
-			return nil, fmt.Errorf("MarshalIProto: LenKeyRecv_MyStruct_MapStringString: %w: %d < %d", iproto.ErrOverflow, len(buf), 4)
+			return nil, fmt.Errorf("UnmarshalIProto: LenKeyRecv_MyStruct_MapStringString: %w: %d < %d", iproto.ErrOverflow, len(buf), 4)
 		}
 		lenKeyRecv_MyStruct_MapStringString := int(binary.LittleEndian.Uint32(buf))
 		buf = buf[4:]
 		if len(buf) < lenKeyRecv_MyStruct_MapStringString {
-			return nil, fmt.Errorf("MarshalIProto: KeyRecv_MyStruct_MapStringString: %w: %d < %d", iproto.ErrOverflow, len(buf), lenKeyRecv_MyStruct_MapStringString)
+			return nil, fmt.Errorf("UnmarshalIProto: KeyRecv_MyStruct_MapStringString: %w: %d < %d", iproto.ErrOverflow, len(buf), lenKeyRecv_MyStruct_MapStringString)
 		}
 		keyRecv_MyStruct_MapStringString := string(buf[:lenKeyRecv_MyStruct_MapStringString])
 		buf = buf[lenKeyRecv_MyStruct_MapStringString:]
 		if len(buf) < 4 {
-			return nil, fmt.Errorf("MarshalIProto: LenRecv_MyStruct_MapStringString_keyRecv_MyStruct_MapStringString_: %w: %d < %d", iproto.ErrOverflow, len(buf), 4)
+			return nil, fmt.Errorf("UnmarshalIProto: LenRecv_MyStruct_MapStringString_keyRecv_MyStruct_MapStringString_: %w: %d < %d", iproto.ErrOverflow, len(buf), 4)
 		}
 		lenRecv_MyStruct_MapStringString_keyRecv_MyStruct_MapStringString_ := int(binary.LittleEndian.Uint32(buf))
 		buf = buf[4:]
 		if len(buf) < lenRecv_MyStruct_MapStringString_keyRecv_MyStruct_MapStringString_ {
-			return nil, fmt.Errorf("MarshalIProto: Recv_MyStruct.MapStringString[keyRecv_MyStruct_MapStringString]: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_MapStringString_keyRecv_MyStruct_MapStringString_)
+			return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.MapStringString[keyRecv_MyStruct_MapStringString]: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_MapStringString_keyRecv_MyStruct_MapStringString_)
 		}
 		recv_MyStruct.MapStringString[keyRecv_MyStruct_MapStringString] = string(buf[:lenRecv_MyStruct_MapStringString_keyRecv_MyStruct_MapStringString_])
 		buf = buf[lenRecv_MyStruct_MapStringString_keyRecv_MyStruct_MapStringString_:]
@@ -537,27 +567,27 @@ func (recv_MyStruct *MyStruct) UnmarshalIProto(buf []byte) ([]byte, error) {
 	}
 	lenRecv_MyStruct_MapStringStringTagged := int(u64)
 	if len(buf) < lenRecv_MyStruct_MapStringStringTagged {
-		return nil, fmt.Errorf("MarshalIProto: Recv_MyStruct.MapStringStringTagged: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_MapStringStringTagged)
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.MapStringStringTagged: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_MapStringStringTagged)
 	}
 	recv_MyStruct.MapStringStringTagged = make(map[string]string, lenRecv_MyStruct_MapStringStringTagged)
 	for iRecv_MyStruct_MapStringStringTagged := 0; iRecv_MyStruct_MapStringStringTagged < lenRecv_MyStruct_MapStringStringTagged; iRecv_MyStruct_MapStringStringTagged++ {
 		if len(buf) < 1 {
-			return nil, fmt.Errorf("MarshalIProto: LenKeyRecv_MyStruct_MapStringStringTagged: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+			return nil, fmt.Errorf("UnmarshalIProto: LenKeyRecv_MyStruct_MapStringStringTagged: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
 		}
 		lenKeyRecv_MyStruct_MapStringStringTagged := int(buf[0])
 		buf = buf[1:]
 		if len(buf) < lenKeyRecv_MyStruct_MapStringStringTagged {
-			return nil, fmt.Errorf("MarshalIProto: KeyRecv_MyStruct_MapStringStringTagged: %w: %d < %d", iproto.ErrOverflow, len(buf), lenKeyRecv_MyStruct_MapStringStringTagged)
+			return nil, fmt.Errorf("UnmarshalIProto: KeyRecv_MyStruct_MapStringStringTagged: %w: %d < %d", iproto.ErrOverflow, len(buf), lenKeyRecv_MyStruct_MapStringStringTagged)
 		}
 		keyRecv_MyStruct_MapStringStringTagged := string(buf[:lenKeyRecv_MyStruct_MapStringStringTagged])
 		buf = buf[lenKeyRecv_MyStruct_MapStringStringTagged:]
 		if len(buf) < 2 {
-			return nil, fmt.Errorf("MarshalIProto: LenRecv_MyStruct_MapStringStringTagged_keyRecv_MyStruct_MapStringStringTagged_: %w: %d < %d", iproto.ErrOverflow, len(buf), 2)
+			return nil, fmt.Errorf("UnmarshalIProto: LenRecv_MyStruct_MapStringStringTagged_keyRecv_MyStruct_MapStringStringTagged_: %w: %d < %d", iproto.ErrOverflow, len(buf), 2)
 		}
 		lenRecv_MyStruct_MapStringStringTagged_keyRecv_MyStruct_MapStringStringTagged_ := int(binary.LittleEndian.Uint16(buf))
 		buf = buf[2:]
 		if len(buf) < lenRecv_MyStruct_MapStringStringTagged_keyRecv_MyStruct_MapStringStringTagged_ {
-			return nil, fmt.Errorf("MarshalIProto: Recv_MyStruct.MapStringStringTagged[keyRecv_MyStruct_MapStringStringTagged]: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_MapStringStringTagged_keyRecv_MyStruct_MapStringStringTagged_)
+			return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.MapStringStringTagged[keyRecv_MyStruct_MapStringStringTagged]: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_MapStringStringTagged_keyRecv_MyStruct_MapStringStringTagged_)
 		}
 		recv_MyStruct.MapStringStringTagged[keyRecv_MyStruct_MapStringStringTagged] = string(buf[:lenRecv_MyStruct_MapStringStringTagged_keyRecv_MyStruct_MapStringStringTagged_])
 		buf = buf[lenRecv_MyStruct_MapStringStringTagged_keyRecv_MyStruct_MapStringStringTagged_:]
@@ -568,7 +598,7 @@ func (recv_MyStruct *MyStruct) UnmarshalIProto(buf []byte) ([]byte, error) {
 	}
 	lenRecv_MyStruct_Set := int(u64)
 	if len(buf) < lenRecv_MyStruct_Set {
-		return nil, fmt.Errorf("MarshalIProto: Recv_MyStruct.Set: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_Set)
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.Set: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_Set)
 	}
 	recv_MyStruct.Set = make(map[string]struct{}, lenRecv_MyStruct_Set)
 	for iRecv_MyStruct_Set := 0; iRecv_MyStruct_Set < lenRecv_MyStruct_Set; iRecv_MyStruct_Set++ {
@@ -578,7 +608,7 @@ func (recv_MyStruct *MyStruct) UnmarshalIProto(buf []byte) ([]byte, error) {
 		}
 		lenKeyRecv_MyStruct_Set := int(u64)
 		if len(buf) < lenKeyRecv_MyStruct_Set {
-			return nil, fmt.Errorf("MarshalIProto: KeyRecv_MyStruct_Set: %w: %d < %d", iproto.ErrOverflow, len(buf), lenKeyRecv_MyStruct_Set)
+			return nil, fmt.Errorf("UnmarshalIProto: KeyRecv_MyStruct_Set: %w: %d < %d", iproto.ErrOverflow, len(buf), lenKeyRecv_MyStruct_Set)
 		}
 		keyRecv_MyStruct_Set := string(buf[:lenKeyRecv_MyStruct_Set])
 		buf = buf[lenKeyRecv_MyStruct_Set:]
@@ -590,22 +620,22 @@ func (recv_MyStruct *MyStruct) UnmarshalIProto(buf []byte) ([]byte, error) {
 	}
 	lenRecv_MyStruct_MapIntInts := int(u64)
 	if len(buf) < lenRecv_MyStruct_MapIntInts {
-		return nil, fmt.Errorf("MarshalIProto: Recv_MyStruct.MapIntInts: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_MapIntInts)
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.MapIntInts: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_MapIntInts)
 	}
 	recv_MyStruct.MapIntInts = make(map[int][]Ints, lenRecv_MyStruct_MapIntInts)
 	for iRecv_MyStruct_MapIntInts := 0; iRecv_MyStruct_MapIntInts < lenRecv_MyStruct_MapIntInts; iRecv_MyStruct_MapIntInts++ {
 		if len(buf) < 4 {
-			return nil, fmt.Errorf("MarshalIProto: KeyRecv_MyStruct_MapIntInts: %w: %d < %d", iproto.ErrOverflow, len(buf), 4)
+			return nil, fmt.Errorf("UnmarshalIProto: KeyRecv_MyStruct_MapIntInts: %w: %d < %d", iproto.ErrOverflow, len(buf), 4)
 		}
 		keyRecv_MyStruct_MapIntInts := int(int32(binary.LittleEndian.Uint32(buf)))
 		buf = buf[4:]
 		if len(buf) < 1 {
-			return nil, fmt.Errorf("MarshalIProto: LenRecv_MyStruct_MapIntInts_keyRecv_MyStruct_MapIntInts_: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+			return nil, fmt.Errorf("UnmarshalIProto: LenRecv_MyStruct_MapIntInts_keyRecv_MyStruct_MapIntInts_: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
 		}
 		lenRecv_MyStruct_MapIntInts_keyRecv_MyStruct_MapIntInts_ := int(buf[0])
 		buf = buf[1:]
 		if len(buf) < lenRecv_MyStruct_MapIntInts_keyRecv_MyStruct_MapIntInts_ {
-			return nil, fmt.Errorf("MarshalIProto: Recv_MyStruct.MapIntInts[keyRecv_MyStruct_MapIntInts]: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_MapIntInts_keyRecv_MyStruct_MapIntInts_)
+			return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.MapIntInts[keyRecv_MyStruct_MapIntInts]: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_MapIntInts_keyRecv_MyStruct_MapIntInts_)
 		}
 		recv_MyStruct.MapIntInts[keyRecv_MyStruct_MapIntInts] = make([]Ints, lenRecv_MyStruct_MapIntInts_keyRecv_MyStruct_MapIntInts_)
 		for iRecv_MyStruct_MapIntInts_keyRecv_MyStruct_MapIntInts_ := 0; iRecv_MyStruct_MapIntInts_keyRecv_MyStruct_MapIntInts_ < lenRecv_MyStruct_MapIntInts_keyRecv_MyStruct_MapIntInts_; iRecv_MyStruct_MapIntInts_keyRecv_MyStruct_MapIntInts_++ {
@@ -620,57 +650,57 @@ func (recv_MyStruct *MyStruct) UnmarshalIProto(buf []byte) ([]byte, error) {
 			}
 			recv_MyStruct.MapIntInts[keyRecv_MyStruct_MapIntInts][iRecv_MyStruct_MapIntInts_keyRecv_MyStruct_MapIntInts_].InnerInt = innerpkg.InnerInt(u64)
 			if len(buf) < 1 {
-				return nil, fmt.Errorf("MarshalIProto: Recv_MyStruct.MapIntInts[keyRecv_MyStruct_MapIntInts][iRecv_MyStruct_MapIntInts_keyRecv_MyStruct_MapIntInts_].Int8: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+				return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.MapIntInts[keyRecv_MyStruct_MapIntInts][iRecv_MyStruct_MapIntInts_keyRecv_MyStruct_MapIntInts_].Int8: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
 			}
 			recv_MyStruct.MapIntInts[keyRecv_MyStruct_MapIntInts][iRecv_MyStruct_MapIntInts_keyRecv_MyStruct_MapIntInts_].Int8 = int8(buf[0])
 			buf = buf[1:]
 			if len(buf) < 1 {
-				return nil, fmt.Errorf("MarshalIProto: Recv_MyStruct.MapIntInts[keyRecv_MyStruct_MapIntInts][iRecv_MyStruct_MapIntInts_keyRecv_MyStruct_MapIntInts_].DefInt8: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+				return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.MapIntInts[keyRecv_MyStruct_MapIntInts][iRecv_MyStruct_MapIntInts_keyRecv_MyStruct_MapIntInts_].DefInt8: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
 			}
 			recv_MyStruct.MapIntInts[keyRecv_MyStruct_MapIntInts][iRecv_MyStruct_MapIntInts_keyRecv_MyStruct_MapIntInts_].DefInt8 = iprototypes.Int8(buf[0])
 			buf = buf[1:]
 			if len(buf) < 1 {
-				return nil, fmt.Errorf("MarshalIProto: Recv_MyStruct.MapIntInts[keyRecv_MyStruct_MapIntInts][iRecv_MyStruct_MapIntInts_keyRecv_MyStruct_MapIntInts_].Uint8: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+				return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.MapIntInts[keyRecv_MyStruct_MapIntInts][iRecv_MyStruct_MapIntInts_keyRecv_MyStruct_MapIntInts_].Uint8: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
 			}
 			recv_MyStruct.MapIntInts[keyRecv_MyStruct_MapIntInts][iRecv_MyStruct_MapIntInts_keyRecv_MyStruct_MapIntInts_].Uint8 = buf[0]
 			buf = buf[1:]
 			if len(buf) < 2 {
-				return nil, fmt.Errorf("MarshalIProto: Recv_MyStruct.MapIntInts[keyRecv_MyStruct_MapIntInts][iRecv_MyStruct_MapIntInts_keyRecv_MyStruct_MapIntInts_].Uint16: %w: %d < %d", iproto.ErrOverflow, len(buf), 2)
+				return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.MapIntInts[keyRecv_MyStruct_MapIntInts][iRecv_MyStruct_MapIntInts_keyRecv_MyStruct_MapIntInts_].Uint16: %w: %d < %d", iproto.ErrOverflow, len(buf), 2)
 			}
 			recv_MyStruct.MapIntInts[keyRecv_MyStruct_MapIntInts][iRecv_MyStruct_MapIntInts_keyRecv_MyStruct_MapIntInts_].Uint16 = binary.LittleEndian.Uint16(buf)
 			buf = buf[2:]
 			if len(buf) < 4 {
-				return nil, fmt.Errorf("MarshalIProto: Recv_MyStruct.MapIntInts[keyRecv_MyStruct_MapIntInts][iRecv_MyStruct_MapIntInts_keyRecv_MyStruct_MapIntInts_].Uint32: %w: %d < %d", iproto.ErrOverflow, len(buf), 4)
+				return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.MapIntInts[keyRecv_MyStruct_MapIntInts][iRecv_MyStruct_MapIntInts_keyRecv_MyStruct_MapIntInts_].Uint32: %w: %d < %d", iproto.ErrOverflow, len(buf), 4)
 			}
 			recv_MyStruct.MapIntInts[keyRecv_MyStruct_MapIntInts][iRecv_MyStruct_MapIntInts_keyRecv_MyStruct_MapIntInts_].Uint32 = binary.LittleEndian.Uint32(buf)
 			buf = buf[4:]
 			if len(buf) < 8 {
-				return nil, fmt.Errorf("MarshalIProto: Recv_MyStruct.MapIntInts[keyRecv_MyStruct_MapIntInts][iRecv_MyStruct_MapIntInts_keyRecv_MyStruct_MapIntInts_].Uint64: %w: %d < %d", iproto.ErrOverflow, len(buf), 8)
+				return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.MapIntInts[keyRecv_MyStruct_MapIntInts][iRecv_MyStruct_MapIntInts_keyRecv_MyStruct_MapIntInts_].Uint64: %w: %d < %d", iproto.ErrOverflow, len(buf), 8)
 			}
 			recv_MyStruct.MapIntInts[keyRecv_MyStruct_MapIntInts][iRecv_MyStruct_MapIntInts_keyRecv_MyStruct_MapIntInts_].Uint64 = binary.LittleEndian.Uint64(buf)
 			buf = buf[8:]
 			if len(buf) < 1 {
-				return nil, fmt.Errorf("MarshalIProto: Recv_MyStruct.MapIntInts[keyRecv_MyStruct_MapIntInts][iRecv_MyStruct_MapIntInts_keyRecv_MyStruct_MapIntInts_].DefUint8: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+				return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.MapIntInts[keyRecv_MyStruct_MapIntInts][iRecv_MyStruct_MapIntInts_keyRecv_MyStruct_MapIntInts_].DefUint8: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
 			}
 			recv_MyStruct.MapIntInts[keyRecv_MyStruct_MapIntInts][iRecv_MyStruct_MapIntInts_keyRecv_MyStruct_MapIntInts_].DefUint8 = iprototypes.Uint8(buf[0])
 			buf = buf[1:]
 			if len(buf) < 2 {
-				return nil, fmt.Errorf("MarshalIProto: Recv_MyStruct.MapIntInts[keyRecv_MyStruct_MapIntInts][iRecv_MyStruct_MapIntInts_keyRecv_MyStruct_MapIntInts_].DefUint16: %w: %d < %d", iproto.ErrOverflow, len(buf), 2)
+				return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.MapIntInts[keyRecv_MyStruct_MapIntInts][iRecv_MyStruct_MapIntInts_keyRecv_MyStruct_MapIntInts_].DefUint16: %w: %d < %d", iproto.ErrOverflow, len(buf), 2)
 			}
 			recv_MyStruct.MapIntInts[keyRecv_MyStruct_MapIntInts][iRecv_MyStruct_MapIntInts_keyRecv_MyStruct_MapIntInts_].DefUint16 = iprototypes.Uint16(binary.LittleEndian.Uint16(buf))
 			buf = buf[2:]
 			if len(buf) < 4 {
-				return nil, fmt.Errorf("MarshalIProto: Recv_MyStruct.MapIntInts[keyRecv_MyStruct_MapIntInts][iRecv_MyStruct_MapIntInts_keyRecv_MyStruct_MapIntInts_].DefUint32: %w: %d < %d", iproto.ErrOverflow, len(buf), 4)
+				return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.MapIntInts[keyRecv_MyStruct_MapIntInts][iRecv_MyStruct_MapIntInts_keyRecv_MyStruct_MapIntInts_].DefUint32: %w: %d < %d", iproto.ErrOverflow, len(buf), 4)
 			}
 			recv_MyStruct.MapIntInts[keyRecv_MyStruct_MapIntInts][iRecv_MyStruct_MapIntInts_keyRecv_MyStruct_MapIntInts_].DefUint32 = iprototypes.Uint32(binary.LittleEndian.Uint32(buf))
 			buf = buf[4:]
 			if len(buf) < 8 {
-				return nil, fmt.Errorf("MarshalIProto: Recv_MyStruct.MapIntInts[keyRecv_MyStruct_MapIntInts][iRecv_MyStruct_MapIntInts_keyRecv_MyStruct_MapIntInts_].DefUint64: %w: %d < %d", iproto.ErrOverflow, len(buf), 8)
+				return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.MapIntInts[keyRecv_MyStruct_MapIntInts][iRecv_MyStruct_MapIntInts_keyRecv_MyStruct_MapIntInts_].DefUint64: %w: %d < %d", iproto.ErrOverflow, len(buf), 8)
 			}
 			recv_MyStruct.MapIntInts[keyRecv_MyStruct_MapIntInts][iRecv_MyStruct_MapIntInts_keyRecv_MyStruct_MapIntInts_].DefUint64 = iprototypes.Uint64(binary.LittleEndian.Uint64(buf))
 			buf = buf[8:]
 			if len(buf) < 2 {
-				return nil, fmt.Errorf("MarshalIProto: Recv_MyStruct.MapIntInts[keyRecv_MyStruct_MapIntInts][iRecv_MyStruct_MapIntInts_keyRecv_MyStruct_MapIntInts_].Clipped: %w: %d < %d", iproto.ErrOverflow, len(buf), 2)
+				return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.MapIntInts[keyRecv_MyStruct_MapIntInts][iRecv_MyStruct_MapIntInts_keyRecv_MyStruct_MapIntInts_].Clipped: %w: %d < %d", iproto.ErrOverflow, len(buf), 2)
 			}
 			recv_MyStruct.MapIntInts[keyRecv_MyStruct_MapIntInts][iRecv_MyStruct_MapIntInts_keyRecv_MyStruct_MapIntInts_].Clipped = uint32(binary.LittleEndian.Uint16(buf))
 			buf = buf[2:]
@@ -682,17 +712,17 @@ func (recv_MyStruct *MyStruct) UnmarshalIProto(buf []byte) ([]byte, error) {
 	}
 	lenRecv_MyStruct_MapMapSlice := int(u64)
 	if len(buf) < lenRecv_MyStruct_MapMapSlice {
-		return nil, fmt.Errorf("MarshalIProto: Recv_MyStruct.MapMapSlice: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_MapMapSlice)
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.MapMapSlice: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_MapMapSlice)
 	}
 	recv_MyStruct.MapMapSlice = make(map[string]map[string][]string, lenRecv_MyStruct_MapMapSlice)
 	for iRecv_MyStruct_MapMapSlice := 0; iRecv_MyStruct_MapMapSlice < lenRecv_MyStruct_MapMapSlice; iRecv_MyStruct_MapMapSlice++ {
 		if len(buf) < 1 {
-			return nil, fmt.Errorf("MarshalIProto: LenKeyRecv_MyStruct_MapMapSlice: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+			return nil, fmt.Errorf("UnmarshalIProto: LenKeyRecv_MyStruct_MapMapSlice: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
 		}
 		lenKeyRecv_MyStruct_MapMapSlice := int(buf[0])
 		buf = buf[1:]
 		if len(buf) < lenKeyRecv_MyStruct_MapMapSlice {
-			return nil, fmt.Errorf("MarshalIProto: KeyRecv_MyStruct_MapMapSlice: %w: %d < %d", iproto.ErrOverflow, len(buf), lenKeyRecv_MyStruct_MapMapSlice)
+			return nil, fmt.Errorf("UnmarshalIProto: KeyRecv_MyStruct_MapMapSlice: %w: %d < %d", iproto.ErrOverflow, len(buf), lenKeyRecv_MyStruct_MapMapSlice)
 		}
 		keyRecv_MyStruct_MapMapSlice := string(buf[:lenKeyRecv_MyStruct_MapMapSlice])
 		buf = buf[lenKeyRecv_MyStruct_MapMapSlice:]
@@ -702,17 +732,17 @@ func (recv_MyStruct *MyStruct) UnmarshalIProto(buf []byte) ([]byte, error) {
 		}
 		lenRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice_ := int(u64)
 		if len(buf) < lenRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice_ {
-			return nil, fmt.Errorf("MarshalIProto: Recv_MyStruct.MapMapSlice[keyRecv_MyStruct_MapMapSlice]: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice_)
+			return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.MapMapSlice[keyRecv_MyStruct_MapMapSlice]: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice_)
 		}
 		recv_MyStruct.MapMapSlice[keyRecv_MyStruct_MapMapSlice] = make(map[string][]string, lenRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice_)
 		for iRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice_ := 0; iRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice_ < lenRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice_; iRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice_++ {
 			if len(buf) < 1 {
-				return nil, fmt.Errorf("MarshalIProto: LenKeyRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice_: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+				return nil, fmt.Errorf("UnmarshalIProto: LenKeyRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice_: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
 			}
 			lenKeyRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice_ := int(buf[0])
 			buf = buf[1:]
 			if len(buf) < lenKeyRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice_ {
-				return nil, fmt.Errorf("MarshalIProto: KeyRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice_: %w: %d < %d", iproto.ErrOverflow, len(buf), lenKeyRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice_)
+				return nil, fmt.Errorf("UnmarshalIProto: KeyRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice_: %w: %d < %d", iproto.ErrOverflow, len(buf), lenKeyRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice_)
 			}
 			keyRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice_ := string(buf[:lenKeyRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice_])
 			buf = buf[lenKeyRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice_:]
@@ -722,17 +752,17 @@ func (recv_MyStruct *MyStruct) UnmarshalIProto(buf []byte) ([]byte, error) {
 			}
 			lenRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice__keyRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice__ := int(u64)
 			if len(buf) < lenRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice__keyRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice__ {
-				return nil, fmt.Errorf("MarshalIProto: Recv_MyStruct.MapMapSlice[keyRecv_MyStruct_MapMapSlice][keyRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice_]: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice__keyRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice__)
+				return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.MapMapSlice[keyRecv_MyStruct_MapMapSlice][keyRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice_]: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice__keyRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice__)
 			}
 			recv_MyStruct.MapMapSlice[keyRecv_MyStruct_MapMapSlice][keyRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice_] = make([]string, lenRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice__keyRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice__)
 			for iRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice__keyRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice__ := 0; iRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice__keyRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice__ < lenRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice__keyRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice__; iRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice__keyRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice__++ {
 				if len(buf) < 1 {
-					return nil, fmt.Errorf("MarshalIProto: LenRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice__keyRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice___iRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice__keyRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice___: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+					return nil, fmt.Errorf("UnmarshalIProto: LenRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice__keyRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice___iRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice__keyRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice___: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
 				}
 				lenRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice__keyRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice___iRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice__keyRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice___ := int(buf[0])
 				buf = buf[1:]
 				if len(buf) < lenRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice__keyRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice___iRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice__keyRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice___ {
-					return nil, fmt.Errorf("MarshalIProto: Recv_MyStruct.MapMapSlice[keyRecv_MyStruct_MapMapSlice][keyRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice_][iRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice__keyRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice__]: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice__keyRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice___iRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice__keyRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice___)
+					return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.MapMapSlice[keyRecv_MyStruct_MapMapSlice][keyRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice_][iRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice__keyRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice__]: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice__keyRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice___iRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice__keyRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice___)
 				}
 				recv_MyStruct.MapMapSlice[keyRecv_MyStruct_MapMapSlice][keyRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice_][iRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice__keyRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice__] = string(buf[:lenRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice__keyRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice___iRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice__keyRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice___])
 				buf = buf[lenRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice__keyRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice___iRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice__keyRecv_MyStruct_MapMapSlice_keyRecv_MyStruct_MapMapSlice___:]
@@ -745,17 +775,17 @@ func (recv_MyStruct *MyStruct) UnmarshalIProto(buf []byte) ([]byte, error) {
 	}
 	lenRecv_MyStruct_MapSliceMap := int(u64)
 	if len(buf) < lenRecv_MyStruct_MapSliceMap {
-		return nil, fmt.Errorf("MarshalIProto: Recv_MyStruct.MapSliceMap: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_MapSliceMap)
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.MapSliceMap: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_MapSliceMap)
 	}
 	recv_MyStruct.MapSliceMap = make(map[string][]map[string]string, lenRecv_MyStruct_MapSliceMap)
 	for iRecv_MyStruct_MapSliceMap := 0; iRecv_MyStruct_MapSliceMap < lenRecv_MyStruct_MapSliceMap; iRecv_MyStruct_MapSliceMap++ {
 		if len(buf) < 1 {
-			return nil, fmt.Errorf("MarshalIProto: LenKeyRecv_MyStruct_MapSliceMap: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+			return nil, fmt.Errorf("UnmarshalIProto: LenKeyRecv_MyStruct_MapSliceMap: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
 		}
 		lenKeyRecv_MyStruct_MapSliceMap := int(buf[0])
 		buf = buf[1:]
 		if len(buf) < lenKeyRecv_MyStruct_MapSliceMap {
-			return nil, fmt.Errorf("MarshalIProto: KeyRecv_MyStruct_MapSliceMap: %w: %d < %d", iproto.ErrOverflow, len(buf), lenKeyRecv_MyStruct_MapSliceMap)
+			return nil, fmt.Errorf("UnmarshalIProto: KeyRecv_MyStruct_MapSliceMap: %w: %d < %d", iproto.ErrOverflow, len(buf), lenKeyRecv_MyStruct_MapSliceMap)
 		}
 		keyRecv_MyStruct_MapSliceMap := string(buf[:lenKeyRecv_MyStruct_MapSliceMap])
 		buf = buf[lenKeyRecv_MyStruct_MapSliceMap:]
@@ -765,7 +795,7 @@ func (recv_MyStruct *MyStruct) UnmarshalIProto(buf []byte) ([]byte, error) {
 		}
 		lenRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap_ := int(u64)
 		if len(buf) < lenRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap_ {
-			return nil, fmt.Errorf("MarshalIProto: Recv_MyStruct.MapSliceMap[keyRecv_MyStruct_MapSliceMap]: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap_)
+			return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.MapSliceMap[keyRecv_MyStruct_MapSliceMap]: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap_)
 		}
 		recv_MyStruct.MapSliceMap[keyRecv_MyStruct_MapSliceMap] = make([]map[string]string, lenRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap_)
 		for iRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap_ := 0; iRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap_ < lenRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap_; iRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap_++ {
@@ -775,27 +805,27 @@ func (recv_MyStruct *MyStruct) UnmarshalIProto(buf []byte) ([]byte, error) {
 			}
 			lenRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap__iRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap__ := int(u64)
 			if len(buf) < lenRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap__iRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap__ {
-				return nil, fmt.Errorf("MarshalIProto: Recv_MyStruct.MapSliceMap[keyRecv_MyStruct_MapSliceMap][iRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap_]: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap__iRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap__)
+				return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.MapSliceMap[keyRecv_MyStruct_MapSliceMap][iRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap_]: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap__iRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap__)
 			}
 			recv_MyStruct.MapSliceMap[keyRecv_MyStruct_MapSliceMap][iRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap_] = make(map[string]string, lenRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap__iRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap__)
 			for iRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap__iRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap__ := 0; iRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap__iRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap__ < lenRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap__iRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap__; iRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap__iRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap__++ {
 				if len(buf) < 1 {
-					return nil, fmt.Errorf("MarshalIProto: LenKeyRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap__iRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap__: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+					return nil, fmt.Errorf("UnmarshalIProto: LenKeyRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap__iRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap__: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
 				}
 				lenKeyRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap__iRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap__ := int(buf[0])
 				buf = buf[1:]
 				if len(buf) < lenKeyRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap__iRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap__ {
-					return nil, fmt.Errorf("MarshalIProto: KeyRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap__iRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap__: %w: %d < %d", iproto.ErrOverflow, len(buf), lenKeyRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap__iRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap__)
+					return nil, fmt.Errorf("UnmarshalIProto: KeyRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap__iRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap__: %w: %d < %d", iproto.ErrOverflow, len(buf), lenKeyRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap__iRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap__)
 				}
 				keyRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap__iRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap__ := string(buf[:lenKeyRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap__iRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap__])
 				buf = buf[lenKeyRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap__iRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap__:]
 				if len(buf) < 1 {
-					return nil, fmt.Errorf("MarshalIProto: LenRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap__iRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap___keyRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap__iRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap___: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+					return nil, fmt.Errorf("UnmarshalIProto: LenRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap__iRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap___keyRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap__iRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap___: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
 				}
 				lenRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap__iRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap___keyRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap__iRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap___ := int(buf[0])
 				buf = buf[1:]
 				if len(buf) < lenRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap__iRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap___keyRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap__iRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap___ {
-					return nil, fmt.Errorf("MarshalIProto: Recv_MyStruct.MapSliceMap[keyRecv_MyStruct_MapSliceMap][iRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap_][keyRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap__iRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap__]: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap__iRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap___keyRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap__iRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap___)
+					return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.MapSliceMap[keyRecv_MyStruct_MapSliceMap][iRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap_][keyRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap__iRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap__]: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap__iRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap___keyRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap__iRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap___)
 				}
 				recv_MyStruct.MapSliceMap[keyRecv_MyStruct_MapSliceMap][iRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap_][keyRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap__iRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap__] = string(buf[:lenRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap__iRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap___keyRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap__iRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap___])
 				buf = buf[lenRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap__iRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap___keyRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap__iRecv_MyStruct_MapSliceMap_keyRecv_MyStruct_MapSliceMap___:]
@@ -816,7 +846,7 @@ func (recv_UUID *UUID) UnmarshalIProto(buf []byte) ([]byte, error) {
 		err error
 	)
 	if len(buf) < 16 {
-		return nil, fmt.Errorf("MarshalIProto: *recv_UUID: %w: %d < %d", iproto.ErrOverflow, len(buf), 16)
+		return nil, fmt.Errorf("UnmarshalIProto: *recv_UUID: %w: %d < %d", iproto.ErrOverflow, len(buf), 16)
 	}
 	for i_recv_UUID := 0; i_recv_UUID < 16; i_recv_UUID++ {
 		u64, buf, err = iproto.DecodeBER(buf)

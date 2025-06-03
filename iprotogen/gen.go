@@ -74,7 +74,7 @@ type File struct {
 	Directives  string // before the package token
 	PkgName     string
 	ImportByPkg map[string]string   // pkg -> alias
-	ImportAlias map[string]struct{} // the same file shouldn't be processed in parallel, so goro-unsafe maps seems to be ok
+	ImportAlias map[string]struct{} // the same file shouldn't be processed in parallel, so using goro-unsafe maps seems to be ok
 	Decls       []Decl
 }
 
@@ -126,7 +126,7 @@ func (file File) Emit(optFuncs ...FileEmitOptionsFunc) ([]byte, error) {
 	}
 
 	buf := &bytes.Buffer{}
-	buf.WriteString(iprotogenBanner + "\n")
+	buf.WriteString(iprotogenBanner + "\n\n")
 	buf.WriteString(file.Directives)
 
 	if err := printer.Fprint(buf, token.NewFileSet(), f); err != nil {
@@ -291,7 +291,13 @@ func litStr(s string) *ast.BasicLit {
 	}
 }
 
-func emitBoundCheck(x ast.Expr, op token.Token, limitExpr ast.Expr, errTitle string, block []ast.Stmt) []ast.Stmt {
+func emitBoundCheck(x ast.Expr, op token.Token, limitExpr ast.Expr, isMarshal bool, errTitle string, block []ast.Stmt) []ast.Stmt {
+	if isMarshal {
+		errTitle = "MarshalIProto: " + errTitle
+	} else {
+		errTitle = "UnmarshalIProto: " + errTitle
+	}
+
 	return append(block, &ast.IfStmt{
 		Cond: &ast.BinaryExpr{
 			Op: op,
@@ -305,7 +311,7 @@ func emitBoundCheck(x ast.Expr, op token.Token, limitExpr ast.Expr, errTitle str
 						identNil,
 						exprCall(
 							exprFmtErrorf,
-							litStr("MarshalIProto: "+errTitle+": %w: %d "+op.String()+" %d"),
+							litStr(errTitle+": %w: %d "+op.String()+" %d"),
 							exprErrOverflow,
 							x,
 							limitExpr,
