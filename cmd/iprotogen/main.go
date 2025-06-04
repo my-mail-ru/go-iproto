@@ -40,6 +40,8 @@ var (
 )
 
 func main() {
+	log.SetFlags(0)
+
 	if err := start(); err != nil {
 		log.Fatal(err)
 	}
@@ -59,6 +61,7 @@ func start() (retErr error) {
 
 	origSrcDir := filepath.Dir(inFileAbs)
 	srcDir := origSrcDir
+	parserOpt, generatorOpt, writeFile := processFlags(inFileAbs)
 
 	if !*flagDisableStrip {
 		modDir := ""
@@ -76,14 +79,14 @@ func start() (retErr error) {
 		if err = os.Chdir(srcDir); err != nil {
 			return fmt.Errorf("chdir %s: %w", srcDir, err)
 		}
+
+		parserOpt = append(parserOpt, iprotogen.WithModuleDir(modDir))
 	}
 
 	srcPkg := srcDir
 	if *flagRecurse {
 		srcPkg += "/..."
 	}
-
-	parserOpt, generatorOpt, writeFile := processFlags(inFileAbs)
 
 	parser, err := iprotogen.NewParser(parserOpt...)
 	if err != nil {
@@ -92,7 +95,7 @@ func start() (retErr error) {
 
 	files, err := parser.ParsePackage(srcPkg)
 	if err != nil {
-		return fmt.Errorf("%s: %w", srcPkg, err)
+		return err // already contains the source info
 	}
 
 	for fname, data := range files {
@@ -120,23 +123,23 @@ func start() (retErr error) {
 
 func processFlags(inFileAbs string) (parserOpt []iprotogen.ParserOptionsFunc, generatorOpt []iprotogen.FileEmitOptionsFunc, writeFile func(fname string, content []byte) error) {
 	if *flagBuildTags != "" {
-		parserOpt = append(parserOpt, iprotogen.BuildFlag("-tags="+*flagBuildTags))
+		parserOpt = append(parserOpt, iprotogen.WithBuildFlag("-tags="+*flagBuildTags))
 	}
 
 	if *flagOnlyFile {
-		parserOpt = append(parserOpt, iprotogen.OnlyFile(inFileAbs))
+		parserOpt = append(parserOpt, iprotogen.WithOnlyFile(inFileAbs))
 	}
 
 	if *flagIgnoreGenerated {
-		parserOpt = append(parserOpt, iprotogen.IgnoreGenerated)
+		parserOpt = append(parserOpt, iprotogen.WithIgnoreGenerated)
 	}
 
 	if *flagTests {
-		parserOpt = append(parserOpt, iprotogen.ParseTests)
+		parserOpt = append(parserOpt, iprotogen.WithParseTests)
 	}
 
 	if *flagDisableFormatting {
-		generatorOpt = append(generatorOpt, iprotogen.DisableFormatting)
+		generatorOpt = append(generatorOpt, iprotogen.WithDisableFormatting)
 	}
 
 	writeFile = func(fname string, content []byte) error {
@@ -144,7 +147,7 @@ func processFlags(inFileAbs string) (parserOpt []iprotogen.ParserOptionsFunc, ge
 			return fmt.Errorf("error writing generated code: %w", err)
 		}
 
-		fmt.Println(fname, "written")
+		log.Println("writing", fname)
 
 		return nil
 	}
@@ -170,7 +173,7 @@ func removeTempDir(modDir string, keepStripped bool, retErr error) error {
 	}
 
 	if keepStripped {
-		fmt.Println(modDir)
+		log.Println("stripped module directory:", modDir)
 		return retErr
 	}
 

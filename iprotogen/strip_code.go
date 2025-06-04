@@ -252,7 +252,7 @@ func stripGoFile(fset *token.FileSet, dst, src string, mode fs.FileMode) error {
 }
 
 // TODO XXX prefixes aren't reliable, even [filepath.Abs]'ed ones
-// refactor using cyclic filepath.Base
+// refactor using cyclic filepath.Base (filepath.Rel is too smart)
 func RebasePath(base, newBase, file string) (string, error) {
 	if base == newBase {
 		return file, nil

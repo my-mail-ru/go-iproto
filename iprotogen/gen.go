@@ -84,7 +84,7 @@ type fileEmitOptions struct {
 
 type FileEmitOptionsFunc func(*fileEmitOptions)
 
-func DisableFormatting(opt *fileEmitOptions) {
+func WithDisableFormatting(opt *fileEmitOptions) {
 	opt.disableFormatting = true
 }
 

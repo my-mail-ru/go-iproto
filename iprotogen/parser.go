@@ -9,7 +9,9 @@ import (
 	"go/parser"
 	"go/token"
 	"go/types"
+	"log"
 	"os"
+	"path/filepath"
 	"regexp"
 	"slices"
 	"strconv"
@@ -154,7 +156,8 @@ func (f *File) AddType(ident *ast.Ident, typ Type) {
 	})
 }
 
-func (f *File) TypeToExpr(typ types.Type) (ast.Expr, error) {
+// TypeToExpr is a design error and should be eliminated.
+func (f *File) TypeToExpr(typ types.Type, pos token.Pos) (ast.Expr, error) {
 	typeStr := types.TypeString(typ, func(pkg *types.Package) string {
 		pkgName := pkg.Name()
 		if pkgName == f.PkgName {
@@ -188,13 +191,46 @@ func (f *File) TypeToExpr(typ types.Type) (ast.Expr, error) {
 	})
 
 	// return ast.NewIdent(typeStr), nil // produces incorrect AST (generated code is ok)
-	return parser.ParseExpr(typeStr) // slower
+	expr, err := parser.ParseExpr(typeStr) // slower
+	if err != nil {
+		return nil, err
+	}
+
+	setExprPos(expr, pos)
+
+	return expr, nil
+}
+
+// we can't wrap the Pos() using a custom type because the go/printer is full of type switches.
+func setExprPos(expr ast.Expr, pos token.Pos) {
+	// only the nodes which can be used inside a type expression
+	switch x := expr.(type) {
+	case *ast.Ident: // simple types
+		x.NamePos = pos
+	case *ast.StarExpr: // pointer types
+		x.Star = pos
+	case *ast.SelectorExpr: // package.type
+		setExprPos(x.X, pos)
+	case *ast.CompositeLit: // not sure
+		if x.Type != nil {
+			setExprPos(x.Type, pos)
+		} else {
+			x.Lbrace = pos
+		}
+	case *ast.ArrayType:
+		x.Lbrack = pos
+	case *ast.StructType:
+		x.Struct = pos
+	case *ast.MapType:
+		x.Map = pos
+	}
 }
 
 type Parser struct {
 	fset            *token.FileSet
 	onlyFile        sameFileChecker
 	generated       sync.Map
+	modDir          string
 	buildFlags      []string
 	ignoreGenerated bool
 	parseTests      bool
@@ -210,6 +246,7 @@ type pkgParser struct {
 
 type pkgParserOptions struct {
 	onlyFile        string
+	modDir          string
 	buildFlags      []string
 	ignoreGenerated bool
 	parseTests      bool
@@ -217,21 +254,27 @@ type pkgParserOptions struct {
 
 type ParserOptionsFunc func(*pkgParserOptions)
 
-func OnlyFile(fname string) ParserOptionsFunc {
+func WithOnlyFile(fname string) ParserOptionsFunc {
 	return func(opt *pkgParserOptions) {
 		opt.onlyFile = fname
 	}
 }
 
-func IgnoreGenerated(opt *pkgParserOptions) {
+func WithModuleDir(dir string) ParserOptionsFunc {
+	return func(opt *pkgParserOptions) {
+		opt.modDir = dir
+	}
+}
+
+func WithIgnoreGenerated(opt *pkgParserOptions) {
 	opt.ignoreGenerated = true
 }
 
-func ParseTests(opt *pkgParserOptions) {
+func WithParseTests(opt *pkgParserOptions) {
 	opt.parseTests = true
 }
 
-func BuildFlag(flag string) ParserOptionsFunc {
+func WithBuildFlag(flag string) ParserOptionsFunc {
 	return func(opt *pkgParserOptions) {
 		opt.buildFlags = append(opt.buildFlags, flag)
 	}
@@ -246,6 +289,7 @@ func NewParser(optFuncs ...ParserOptionsFunc) (*Parser, error) {
 
 	ret := &Parser{
 		fset:            token.NewFileSet(),
+		modDir:          opt.modDir,
 		buildFlags:      opt.buildFlags,
 		ignoreGenerated: opt.ignoreGenerated,
 		parseTests:      opt.parseTests,
@@ -323,6 +367,37 @@ func (p *Parser) ParsePackage(pkgName string) (FilesByPath, error) {
 	return ret, nil
 }
 
+// poser is a half of the ast.Node
+type poser interface {
+	Pos() token.Pos
+}
+
+type errorWithPos struct {
+	pos poser
+	err error
+}
+
+func newErrorWithPos(pos poser, err error) *errorWithPos {
+	var ewp *errorWithPos
+
+	if errors.As(err, &ewp) { // preserve the line information from the deepest level
+		pos = ewp.pos
+	}
+
+	return &errorWithPos{
+		pos: pos,
+		err: err,
+	}
+}
+
+func (ewp *errorWithPos) Unwrap() error {
+	return ewp.err
+}
+
+func (ewp *errorWithPos) Error() string {
+	return ewp.err.Error()
+}
+
 func (pp *pkgParser) parseTypes(pkg *packages.Package, filesByPath FilesByPath, seen map[string]struct{}, directivesByFile map[string]string) error {
 	comments := CommentsByIdent{}
 	comments.FromTypesInfo(pp.Parser.fset, pkg.TypesInfo)
@@ -375,7 +450,7 @@ func (pp *pkgParser) parseTypes(pkg *packages.Package, filesByPath FilesByPath, 
 
 		if deftype.typ.IsAlias() {
 			if tag != nil {
-				return errors.New(deftype.ident.Name + ": cannot generate methods for type alias")
+				return errors.New(pp.filenameLine(deftype.ident) + ": " + deftype.ident.Name + ": cannot generate methods for type alias")
 			}
 
 			continue
@@ -386,8 +461,15 @@ func (pp *pkgParser) parseTypes(pkg *packages.Package, filesByPath FilesByPath, 
 		}
 
 		typ, err := pp.parseType(deftype.ident, deftype.typ.Type(), tag, false)
-		if err != nil {
-			return fmt.Errorf("%s.%s: %w", pkg.Name, deftype.ident.Name, err)
+		if err != nil { // сука
+			pos := poser(deftype.ident)
+			ewp := (*errorWithPos)(nil)
+
+			if errors.As(err, &ewp) {
+				pos = ewp.pos
+			}
+
+			return fmt.Errorf("%s: %s.%w", pp.filenameLine(pos), pkg.Name, err)
 		}
 
 		pp.file.AddType(deftype.ident, typ)
@@ -578,23 +660,34 @@ func (pp *pkgParser) parseType(expr ast.Expr, goType types.Type, tag *structtag.
 		}, nil
 	}
 
+	var (
+		ret Type
+		err error
+	)
+
 	switch goType := goType.(type) {
 	case *types.Basic:
-		return parseBasic(expr, goType, tag)
+		ret, err = pp.parseBasic(expr, goType, tag)
 	case *types.Slice:
-		return pp.parseSlice(expr, goType, tag)
+		ret, err = pp.parseSlice(expr, goType, tag)
 	case *types.Array:
-		return pp.parseArray(expr, goType, tag)
+		ret, err = pp.parseArray(expr, goType, tag)
 	case *types.Map:
-		return pp.parseMap(expr, goType, tag)
+		ret, err = pp.parseMap(expr, goType, tag)
 	case *types.Struct:
-		return pp.parseStruct(expr, goType, needStructLit)
+		ret, err = pp.parseStruct(expr, goType, needStructLit)
 	case *types.Pointer:
-		return pp.parsePointer(goType, tag)
+		ret, err = pp.parsePointer(expr, goType, tag)
 
 	default:
-		return nil, fmt.Errorf("unknown type: %v (%T)", goType, goType)
+		return nil, fmt.Errorf("%s: unsupported type %v (%T)", astToSource(expr), goType, goType)
 	}
+
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", astToSource(expr), err)
+	}
+
+	return ret, nil
 }
 
 type intParams struct {
@@ -634,14 +727,17 @@ var intDefaultTag = map[types.BasicKind]string{
 	types.Uint:   "", //
 }
 
-func parseInt(expr ast.Expr, tagName, dflTag string) (Integer, error) {
-	intTag := dflTag
-	if tagName != "" {
-		intTag = tagName
-	}
-
+func (pp *pkgParser) parseInt(expr, warnLenExpr ast.Expr, intTag, dflTag string) (Integer, error) {
 	if intTag == "" {
-		return Integer{}, fmt.Errorf("%v: tag is required for int/uint types", expr)
+		if dflTag == "" {
+			return Integer{}, errors.New("tag is required for int/uint types")
+		}
+
+		if warnLenExpr != nil {
+			log.Printf("[WARN] %s: using the default length format %q for %s", pp.filenameLine(warnLenExpr), dflTag, astToSource(warnLenExpr))
+		}
+
+		intTag = dflTag
 	}
 
 	params, ok := intTags[intTag]
@@ -669,7 +765,7 @@ func parseInt(expr ast.Expr, tagName, dflTag string) (Integer, error) {
 	}, nil
 }
 
-func parseBasic(expr ast.Expr, basic *types.Basic, tag *structtag.Tag) (Type, error) {
+func (pp *pkgParser) parseBasic(expr ast.Expr, basic *types.Basic, tag *structtag.Tag) (Type, error) {
 	kind := basic.Kind()
 
 	if dflTag, isInt := intDefaultTag[kind]; isInt {
@@ -677,7 +773,7 @@ func parseBasic(expr ast.Expr, basic *types.Basic, tag *structtag.Tag) (Type, er
 			return nil, fmt.Errorf("%v: unsupported tag options for %s: %v", expr, basic.Name(), tag.Options)
 		}
 
-		return parseInt(expr, tag.Name, dflTag)
+		return pp.parseInt(expr, nil, tag.Name, dflTag)
 	}
 
 	switch kind {
@@ -708,7 +804,7 @@ func parseBasic(expr ast.Expr, basic *types.Basic, tag *structtag.Tag) (Type, er
 
 		return Float{TypeExpr: expr, Size: 8}, nil
 	case types.String:
-		lenType, err := parseInt(identInt, tag.Name, u32)
+		lenType, err := pp.parseInt(identInt, expr, tag.Name, u32)
 		if err != nil {
 			return nil, err
 		}
@@ -783,7 +879,7 @@ func parseBool(opts ...string) (Bool, error) {
 }
 
 func (pp *pkgParser) parseSlice(expr ast.Expr, sl *types.Slice, tag *structtag.Tag) (Type, error) {
-	lenType, err := parseInt(identInt, tag.Name, u32)
+	lenType, err := pp.parseInt(identInt, expr, tag.Name, u32)
 	if err != nil {
 		return nil, err
 	}
@@ -808,7 +904,9 @@ func (pp *pkgParser) parseSlice(expr ast.Expr, sl *types.Slice, tag *structtag.T
 		}
 	}
 
-	elemGoTypeExpr, err := pp.file.TypeToExpr(elemGoType)
+	pos := expr.Pos()
+
+	elemGoTypeExpr, err := pp.file.TypeToExpr(elemGoType, pos)
 	if err != nil {
 		return nil, err
 	}
@@ -818,7 +916,7 @@ func (pp *pkgParser) parseSlice(expr ast.Expr, sl *types.Slice, tag *structtag.T
 		return nil, err
 	}
 
-	typeExpr, err := pp.file.TypeToExpr(sl)
+	typeExpr, err := pp.file.TypeToExpr(sl, pos)
 	if err != nil {
 		return nil, err
 	}
@@ -844,7 +942,7 @@ func (pp *pkgParser) parseArray(expr ast.Expr, arrType *types.Array, elemTag *st
 		}
 	}
 
-	elemGoTypeExpr, err := pp.file.TypeToExpr(elemGoType)
+	elemGoTypeExpr, err := pp.file.TypeToExpr(elemGoType, expr.Pos())
 	if err != nil {
 		return nil, err
 	}
@@ -863,7 +961,7 @@ func (pp *pkgParser) parseArray(expr ast.Expr, arrType *types.Array, elemTag *st
 // only one key tag is supported:
 // iproto:lentag,keytag,valuetag1,valuetag2...
 func (pp *pkgParser) parseMap(expr ast.Expr, mapType *types.Map, tag *structtag.Tag) (Type, error) {
-	lenType, err := parseInt(identInt, tag.Name, u32)
+	lenType, err := pp.parseInt(identInt, expr, tag.Name, u32)
 	if err != nil {
 		return nil, err
 	}
@@ -880,15 +978,16 @@ func (pp *pkgParser) parseMap(expr ast.Expr, mapType *types.Map, tag *structtag.
 		}
 	}
 
+	pos := expr.Pos()
 	keyGoType := mapType.Key()
 	valGoType := mapType.Elem()
 
-	keyGoTypeExpr, err := pp.file.TypeToExpr(keyGoType)
+	keyGoTypeExpr, err := pp.file.TypeToExpr(keyGoType, pos)
 	if err != nil {
 		return nil, err
 	}
 
-	valGoTypeExpr, err := pp.file.TypeToExpr(valGoType)
+	valGoTypeExpr, err := pp.file.TypeToExpr(valGoType, pos)
 	if err != nil {
 		return nil, err
 	}
@@ -924,7 +1023,7 @@ func (pp *pkgParser) parseStruct(expr ast.Expr, st *types.Struct, needStructLit 
 		if allTags := st.Tag(i); allTags != "" {
 			tags, err := structtag.Parse(allTags)
 			if err != nil {
-				return nil, fmt.Errorf("%v: invalid tag %s: %w", expr, allTags, err)
+				return nil, newErrorWithPos(field, fmt.Errorf("field %s has invalid tag %s: %w", fieldName, allTags, err))
 			}
 
 			tag, _ = tags.Get(IProtoTag)
@@ -944,19 +1043,19 @@ func (pp *pkgParser) parseStruct(expr ast.Expr, st *types.Struct, needStructLit 
 				continue
 			}
 
-			return nil, errors.New("non-exported field " + fieldName + " has iproto tag")
+			return nil, newErrorWithPos(field, errors.New("non-exported field "+fieldName+" has iproto tag"))
 		}
 
 		goType := field.Type()
 
-		typeExpr, err := pp.file.TypeToExpr(goType)
+		typeExpr, err := pp.file.TypeToExpr(goType, field.Pos())
 		if err != nil {
-			return nil, err
+			return nil, newErrorWithPos(field, fmt.Errorf("field %s: %w", fieldName, err))
 		}
 
 		typ, err := pp.parseType(typeExpr, goType, tag, false)
 		if err != nil {
-			return nil, err
+			return nil, newErrorWithPos(field, fmt.Errorf("field %s: %w", fieldName, err))
 		}
 
 		fields = append(fields, StructField{
@@ -975,9 +1074,9 @@ func (pp *pkgParser) parseStruct(expr ast.Expr, st *types.Struct, needStructLit 
 	return Struct{Fields: fields}, nil
 }
 
-func (pp *pkgParser) parsePointer(ptr *types.Pointer, tag *structtag.Tag) (Type, error) {
+func (pp *pkgParser) parsePointer(expr ast.Expr, ptr *types.Pointer, tag *structtag.Tag) (Type, error) {
 	elemGoType := ptr.Elem()
-	elemGoTypeExpr, err := pp.file.TypeToExpr(ptr)
+	elemGoTypeExpr, err := pp.file.TypeToExpr(ptr, expr.Pos())
 
 	if err != nil {
 		return nil, err
@@ -992,6 +1091,24 @@ func (pp *pkgParser) parsePointer(ptr *types.Pointer, tag *structtag.Tag) (Type,
 		Type:     elemType,
 		TypeExpr: elemGoTypeExpr,
 	}, nil
+}
+
+func (p *Parser) filenameLine(poser poser) string {
+	pos := poser.Pos()
+	if pos == token.NoPos {
+		return "<UNKNOWN>" // the node's ast type isn't supported by setExprPos
+	}
+
+	position := p.fset.Position(pos)
+	filename := position.Filename
+
+	if p.modDir != "" {
+		if fname, err := filepath.Rel(p.modDir, filename); err == nil {
+			filename = fname
+		}
+	}
+
+	return filename + ":" + strconv.Itoa(position.Line)
 }
 
 func (p *Parser) hasHandwrittenImpl(typ types.Type, iface *types.Interface) bool {
