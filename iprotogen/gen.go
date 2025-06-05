@@ -54,7 +54,6 @@ var (
 	exprFloat32frombits = exprDot(identMath, ast.NewIdent("Float32frombits"))
 	exprFloat64frombits = exprDot(identMath, ast.NewIdent("Float64frombits"))
 	exprLittleEndian    = exprDot(ast.NewIdent("binary"), ast.NewIdent("LittleEndian"))
-	exprClone           = exprDot(ast.NewIdent("slices"), ast.NewIdent("Clone"))
 	exprLenBuf          = exprCall(identLen, identBuf)
 	exprBytes           = &ast.ArrayType{Elt: identByte}
 	exprBufErr          = []ast.Expr{identBuf, identErr}
@@ -429,6 +428,14 @@ func exprCall(fun ast.Expr, args ...ast.Expr) *ast.CallExpr {
 	return &ast.CallExpr{
 		Fun:  fun,
 		Args: args,
+	}
+}
+
+func exprCallVarargs(fun ast.Expr, args ...ast.Expr) *ast.CallExpr {
+	return &ast.CallExpr{
+		Fun:      fun,
+		Args:     args,
+		Ellipsis: 1,
 	}
 }
 

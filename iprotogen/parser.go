@@ -191,7 +191,7 @@ func (f *File) TypeToExpr(typ types.Type, pos token.Pos) (ast.Expr, error) {
 	})
 
 	// return ast.NewIdent(typeStr), nil // produces incorrect AST (generated code is ok)
-	expr, err := parser.ParseExpr(typeStr) // slower
+	expr, err := parser.ParseExpr(typeStr) // ... but this is slower
 	if err != nil {
 		return nil, err
 	}
@@ -203,7 +203,7 @@ func (f *File) TypeToExpr(typ types.Type, pos token.Pos) (ast.Expr, error) {
 
 // we can't wrap the Pos() using a custom type because the go/printer is full of type switches.
 func setExprPos(expr ast.Expr, pos token.Pos) {
-	// only the nodes which can be used inside a type expression
+	// only the nodes that can be used inside a type expression
 	switch x := expr.(type) {
 	case *ast.Ident: // simple types
 		x.NamePos = pos
@@ -367,7 +367,8 @@ func (p *Parser) ParsePackage(pkgName string) (FilesByPath, error) {
 	return ret, nil
 }
 
-// poser is a half of the ast.Node
+// poser is a half of the ast.Node.
+// this type is required because types.Var lacks the End() method
 type poser interface {
 	Pos() token.Pos
 }
@@ -461,7 +462,7 @@ func (pp *pkgParser) parseTypes(pkg *packages.Package, filesByPath FilesByPath, 
 		}
 
 		typ, err := pp.parseType(deftype.ident, deftype.typ.Type(), tag, false)
-		if err != nil { // сука
+		if err != nil {
 			pos := poser(deftype.ident)
 			ewp := (*errorWithPos)(nil)
 

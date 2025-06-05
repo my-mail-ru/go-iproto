@@ -365,7 +365,7 @@ func (s StringOrBytes) EmitUnmarshaler(x ast.Expr, block []ast.Stmt) []ast.Stmt 
 
 	// strings are always copied from byte slices
 	if s.IsSlice {
-		subslice = exprCall(exprClone, subslice)
+		subslice = exprCallVarargs(identAppend, &ast.CompositeLit{Type: exprBytes}, subslice)
 	}
 
 	if !isByteSlice(s.TypeExpr) {

@@ -6,7 +6,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"math"
-	"slices"
 
 	iproto "github.com/my-mail-ru/go-iproto"
 	innerpkg "github.com/my-mail-ru/go-iproto/tests/innerpkg"
@@ -465,7 +464,7 @@ func (recv_MyStruct *MyStruct) UnmarshalIProto(buf []byte) ([]byte, error) {
 	if len(buf) < lenRecv_MyStruct_Bytes {
 		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.Bytes: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_Bytes)
 	}
-	recv_MyStruct.Bytes = slices.Clone(buf[:lenRecv_MyStruct_Bytes])
+	recv_MyStruct.Bytes = append([]byte{}, buf[:lenRecv_MyStruct_Bytes]...)
 	buf = buf[lenRecv_MyStruct_Bytes:]
 	u64, buf, err = iproto.DecodeBER(buf)
 	if err != nil {
@@ -475,7 +474,7 @@ func (recv_MyStruct *MyStruct) UnmarshalIProto(buf []byte) ([]byte, error) {
 	if len(buf) < lenRecv_MyStruct_DefBytes {
 		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.DefBytes: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_DefBytes)
 	}
-	recv_MyStruct.DefBytes = iprototypes.Bytes(slices.Clone(buf[:lenRecv_MyStruct_DefBytes]))
+	recv_MyStruct.DefBytes = iprototypes.Bytes(append([]byte{}, buf[:lenRecv_MyStruct_DefBytes]...))
 	buf = buf[lenRecv_MyStruct_DefBytes:]
 	recv_MyStruct.BER, buf, err = iproto.DecodeBER(buf)
 	if err != nil {

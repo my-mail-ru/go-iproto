@@ -6,7 +6,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"math"
-	"slices"
 
 	iproto "github.com/my-mail-ru/go-iproto"
 )
@@ -45,7 +44,7 @@ func (recv_Bytes *Bytes) UnmarshalIProto(buf []byte) ([]byte, error) {
 	if len(buf) < len_recv_Bytes {
 		return nil, fmt.Errorf("UnmarshalIProto: *recv_Bytes: %w: %d < %d", iproto.ErrOverflow, len(buf), len_recv_Bytes)
 	}
-	*recv_Bytes = Bytes(slices.Clone(buf[:len_recv_Bytes]))
+	*recv_Bytes = Bytes(append([]byte{}, buf[:len_recv_Bytes]...))
 	buf = buf[len_recv_Bytes:]
 	return buf, nil
 }
