@@ -87,18 +87,18 @@ func WithDisableFormatting(opt *fileEmitOptions) {
 	opt.disableFormatting = true
 }
 
-func (file File) Emit(optFuncs ...FileEmitOptionsFunc) ([]byte, error) {
+func (f File) Emit(optFuncs ...FileEmitOptionsFunc) ([]byte, error) {
 	var opt fileEmitOptions
 
 	for _, f := range optFuncs {
 		f(&opt)
 	}
 
-	astDecls := make([]ast.Decl, 0, len(file.Decls))
-	imports := make([]*ast.ImportSpec, 0, len(file.ImportByPkg))
-	specs := make([]ast.Spec, 0, len(file.ImportByPkg))
+	astDecls := make([]ast.Decl, 0, len(f.Decls))
+	imports := make([]*ast.ImportSpec, 0, len(f.ImportByPkg))
+	specs := make([]ast.Spec, 0, len(f.ImportByPkg))
 
-	for pkgPath, alias := range file.ImportByPkg {
+	for pkgPath, alias := range f.ImportByPkg {
 		spec := &ast.ImportSpec{Path: litStr(pkgPath)}
 		if alias != "" {
 			spec.Name = ast.NewIdent(alias)
@@ -113,31 +113,31 @@ func (file File) Emit(optFuncs ...FileEmitOptionsFunc) ([]byte, error) {
 		Specs: specs,
 	})
 
-	for _, decl := range file.Decls {
+	for _, decl := range f.Decls {
 		astDecls = decl.EmitMarshalerDecl(astDecls)
 		astDecls = decl.EmitUnmarshalerDecl(astDecls)
 	}
 
-	f := &ast.File{
-		Name:    ast.NewIdent(file.PkgName),
+	file := &ast.File{
+		Name:    ast.NewIdent(f.PkgName),
 		Imports: imports,
 		Decls:   astDecls,
 	}
 
 	buf := &bytes.Buffer{}
-	buf.WriteString(iprotogenBanner + "\n\n")
-	buf.WriteString(file.Directives)
+	_, _ = buf.WriteString(iprotogenBanner + "\n\n")
+	_, _ = buf.WriteString(f.Directives)
 
-	if err := printer.Fprint(buf, token.NewFileSet(), f); err != nil {
+	if err := printer.Fprint(buf, token.NewFileSet(), file); err != nil {
 		return nil, err
 	}
 
-	bytes := buf.Bytes()
+	output := buf.Bytes()
 	if opt.disableFormatting {
-		return bytes, nil
+		return output, nil
 	}
 
-	return goimports.Process(".", bytes, nil)
+	return goimports.Process(".", output, nil)
 }
 
 type Decl struct {
@@ -380,7 +380,7 @@ func emitVarAssign(lhs, rhs ast.Expr, block []ast.Stmt) []ast.Stmt {
 func astToSource(x any) string {
 	src := &strings.Builder{}
 	if err := printer.Fprint(src, token.NewFileSet(), x); err != nil {
-		log.Fatal(err)
+		log.Fatal(err) //nolint:revive
 	}
 
 	return src.String()

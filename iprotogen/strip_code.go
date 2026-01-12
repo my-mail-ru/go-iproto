@@ -27,8 +27,8 @@ func GetModDir(pkgDir string) (string, error) {
 
 	for {
 		goMod := filepath.Join(dir, "go.mod")
-		_, err := os.Stat(goMod)
 
+		_, err := os.Stat(goMod)
 		if err == nil {
 			modDir = dir
 		} else if !errors.Is(err, os.ErrNotExist) {
@@ -62,7 +62,12 @@ func GetModDir(pkgDir string) (string, error) {
 //
 // If a directory was created successfully it is returned always, even in the case of an error.
 func StripModule(modPath string, needTests bool) (string, error) {
-	modPath, err := filepath.Abs(modPath)
+	modPath, err := filepath.EvalSymlinks(modPath)
+	if err != nil {
+		return "", err
+	}
+
+	modPath, err = filepath.Abs(modPath)
 	if err != nil {
 		return "", fmt.Errorf("Abs(%s): %w", modPath, err)
 	}
@@ -109,11 +114,7 @@ func StripModule(modPath string, needTests bool) (string, error) {
 		}
 
 		if info.IsDir() {
-			if err := os.Mkdir(newPath, 0700); err != nil {
-				return err
-			}
-
-			return nil
+			return os.Mkdir(newPath, 0700)
 		}
 
 		if fname == "go.mod" || fname == "go.sum" {
@@ -130,29 +131,28 @@ func StripModule(modPath string, needTests bool) (string, error) {
 	return tmpDir, err
 }
 
-func StripPackage(pkgDir string, needTests bool) (string, string, error) {
-	pkgDir, err := filepath.Abs(pkgDir)
+func StripPackage(pkgDir string, needTests bool) (tmpModDir string, tmpPkgDir string, err error) {
+	pkgDir, err = filepath.Abs(pkgDir)
 	if err != nil {
 		return "", "", fmt.Errorf("Abs(%s): %w", pkgDir, err)
 	}
 
 	modDir, err := GetModDir(pkgDir)
-
 	if err != nil {
 		return "", "", err
 	}
 
-	newModDir, err := StripModule(modDir, needTests)
+	tmpModDir, err = StripModule(modDir, needTests)
 	if err != nil {
-		return newModDir, "", err
+		return tmpModDir, "", err
 	}
 
-	newPkgDir, err := RebasePath(modDir, newModDir, pkgDir)
+	tmpPkgDir, err = RebasePath(modDir, tmpModDir, pkgDir)
 	if err != nil {
-		return newModDir, "", err
+		return tmpModDir, "", err
 	}
 
-	return newModDir, newPkgDir, nil
+	return tmpModDir, tmpPkgDir, nil
 }
 
 func copyFile(dst, src string, mode fs.FileMode) error {
@@ -233,34 +233,31 @@ func stripGoFile(fset *token.FileSet, dst, src string, mode fs.FileMode) error {
 	}
 
 	buf := &bytes.Buffer{}
-	err = printer.Fprint(buf, fset, fDst)
 
-	if err != nil {
+	if err = printer.Fprint(buf, fset, fDst); err != nil {
 		return fmt.Errorf("go/printer: %s: %w", dst, err)
 	}
 
-	bytes, err := goimports.Process(dst, buf.Bytes(), nil)
+	output, err := goimports.Process(dst, buf.Bytes(), nil)
 	if err != nil {
 		return fmt.Errorf("goimports: %s: %w", dst, err)
 	}
 
-	if _, err := wDst.Write(bytes); err != nil {
+	if _, err := wDst.Write(output); err != nil {
 		return fmt.Errorf("write %s: %w", dst, err)
 	}
 
 	return nil
 }
 
-// TODO XXX prefixes aren't reliable, even [filepath.Abs]'ed ones
-// refactor using cyclic filepath.Base (filepath.Rel is too smart)
 func RebasePath(base, newBase, file string) (string, error) {
 	if base == newBase {
 		return file, nil
 	}
 
-	relPath, ok := strings.CutPrefix(file, base)
-	if !ok {
-		return "", errors.New("file path " + file + " doesn't contain " + base + " prefix")
+	relPath, err := filepath.Rel(base, file)
+	if err != nil {
+		return "", err
 	}
 
 	return filepath.Join(newBase, relPath), nil

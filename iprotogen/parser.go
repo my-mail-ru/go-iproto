@@ -486,7 +486,7 @@ func (p *Parser) loadPackages(fset *token.FileSet, pkgPattern ...string) ([]*pac
 
 	cfg := &packages.Config{
 		// TODO remove unused
-		Mode:       packages.NeedName | packages.NeedImports | packages.NeedTypes /*| packages.NeedSyntax*/ | packages.NeedTypesInfo,
+		Mode:       packages.NeedName | packages.NeedImports | packages.NeedTypes /* | packages.NeedSyntax*/ | packages.NeedTypesInfo,
 		Fset:       fset,
 		Tests:      p.parseTests,
 		BuildFlags: p.buildFlags,
@@ -517,8 +517,9 @@ func (p *Parser) loadPackages(fset *token.FileSet, pkgPattern ...string) ([]*pac
 
 			if directives != "" {
 				directivesByFileMu.Lock()
+				defer directivesByFileMu.Unlock()
+
 				directivesByFile[filename] = directives
-				directivesByFileMu.Unlock()
 			}
 
 			return file, nil
@@ -584,7 +585,7 @@ LINES:
 			return "", true
 		case directiveRegexp.MatchString(line): // directive
 			sb.WriteString(line)
-			sb.WriteRune('\n')
+			sb.WriteByte('\n')
 		case !strings.HasPrefix(line, "//") && line != "" && line != "package": // not a doc comment or a blank line. a line containing only the package keyword is allowed because go/printer prints package-level comments in a bizarre way.
 			break LINES
 		}
@@ -1077,8 +1078,8 @@ func (pp *pkgParser) parseStruct(expr ast.Expr, st *types.Struct, needStructLit 
 
 func (pp *pkgParser) parsePointer(expr ast.Expr, ptr *types.Pointer, tag *structtag.Tag) (Type, error) {
 	elemGoType := ptr.Elem()
-	elemGoTypeExpr, err := pp.file.TypeToExpr(ptr, expr.Pos())
 
+	elemGoTypeExpr, err := pp.file.TypeToExpr(elemGoType, expr.Pos())
 	if err != nil {
 		return nil, err
 	}

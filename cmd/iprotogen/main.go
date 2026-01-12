@@ -41,6 +41,7 @@ var (
 
 func main() {
 	log.SetFlags(0)
+	flag.Parse()
 
 	if err := start(); err != nil {
 		log.Fatal(err)
@@ -48,8 +49,6 @@ func main() {
 }
 
 func start() (retErr error) {
-	flag.Parse()
-
 	if *flagInFile == "" {
 		return errors.New("`-in`/`$GOFILE` is mantatory")
 	}
@@ -159,7 +158,7 @@ func processFlags(inFileAbs string) (parserOpt []iprotogen.ParserOptionsFunc, ge
 		}
 	}
 
-	return
+	return parserOpt, generatorOpt, writeFile
 }
 
 func removeTempDir(modDir string, keepStripped bool, retErr error) error {

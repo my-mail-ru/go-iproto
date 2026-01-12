@@ -2,76 +2,138 @@ version: "2"
 run:
   issues-exit-code: 1
   tests: true
-output:
-  formats:
-    text:
-      path: stdout
-      print-linter-name: true
-      print-issued-lines: true
 linters:
+  default: none
   enable:
+    - bodyclose
     - dupl
+    - errcheck
     - gochecknoinits
     - gocognit
     - goconst
     - gocritic
     - gocyclo
     - gosec
+    - govet
+    - ineffassign
     - misspell
-    - perfsprint
     - prealloc
     - revive
+    - staticcheck
+    - unused
     - wastedassign
-    - wsl
+    - wsl_v5
   settings:
     dupl:
       threshold: 100
     goconst:
       min-len: 2
       min-occurrences: 2
-    gocritic:
-      enabled-checks:
-        - nilValReturn
-    govet:
-      enable-all: true
+    revive:
+      rules:
+        - name: argument-limit
+        - name: atomic
+        - name: banned-characters
+        - name: bare-return
+        - name: blank-imports
+        - name: bool-literal-in-expr
+        - name: call-to-gc
+        - name: comment-spacings
+        - name: confusing-naming
+        - name: confusing-results
+        - name: constant-logical-expr
+        - name: context-as-argument
+        - name: context-keys-type
+        - name: datarace
+        - name: deep-exit
+        - name: defer
+        - name: dot-imports
+        - name: duplicated-imports
+        - name: early-return
+        - name: empty-block
+        - name: empty-lines
+        - name: enforce-map-style
+        - name: enforce-repeated-arg-type-style
+        - name: enforce-slice-style
+        - name: error-naming
+        - name: error-return
+        - name: error-strings
+        - name: errorf
+        - name: exported
+        - name: file-header
+        - name: file-length-limit
+        - name: filename-format
+        - name: get-return
+        - name: identical-branches
+        - name: if-return
+        - name: import-alias-naming
+        - name: import-shadowing
+        - name: imports-blocklist
+        - name: increment-decrement
+        - name: indent-error-flow
+        - name: max-control-nesting
+        - name: modifies-parameter
+        - name: modifies-value-receiver
+        - name: optimize-operands-order
+        - name: package-comments
+        - name: range
+        - name: range-val-address
+        - name: range-val-in-closure
+        - name: receiver-naming
+          arguments:
+            "max-length": 3
+        - name: redefines-builtin-id
+        - name: redundant-build-tag
+        # - name: redundant-import-alias # seems to be broken
+        - name: redundant-test-main-exit
+        - name: string-format
+        - name: string-of-int
+        # - name: struct-tag # complains on idiomatic pseudo-field name _
+        - name: superfluous-else
+        - name: time-date
+        - name: time-equal
+        - name: time-naming
+        - name: unconditional-recursion
+        - name: unexported-naming
+        - name: unexported-return
+        - name: unhandled-error
+        - name: unnecessary-format
+        - name: unnecessary-stmt
+        - name: unreachable-code
+        - name: unused-parameter
+        - name: unused-receiver
+        - name: use-any
+        - name: use-errors-new
+        - name: use-fmt-print
+        - name: useless-break
+        - name: var-declaration
+        - name: var-naming
+        - name: waitgroup-by-value
   exclusions:
     generated: lax
-    presets:
-      - comments
-      - common-false-positives
-      - legacy
-      - std-error-handling
     rules:
       - linters:
           - dupl
-          - errcheck
           - gocognit
           - gocyclo
           - gosec
-          - perfsprint
-        path: _test\.go
-      - linters:
-          - gosec
-        path: mock.go
-      - linters:
-          - govet
-        text: fieldalignment
-      - linters:
-          - gosec
-        text: "G115:"
-      - linters:
-          - staticcheck
-        text: "QF1008:"
-    paths:
-      - third_party$
-      - builtin$
-      - examples$
+          - prealloc
+          - wsl_v5
+        path: .*\.*_test\.go$
+      - linters: ["staticcheck"]
+        text: QF1008
+      - linters: ["gosec"]
+        text: '^(G104|G115|G304)'
+      - linters: ["revive"]
+        text: 'exported: .* should have comment .*'
+      - linters: ["revive"]
+        text: 'should have a package comment'
+      - linters: ["revive"]
+        text: 'Unhandled error in call to function (strings\.Builder|fmt.)'
+      - linters: ["errcheck"]
+        text: 'Error return value of `.*\.Close` is not checked'
 formatters:
   enable:
     - goimports
   exclusions:
     generated: lax
-    paths:
-      - third_party$
-      - builtin$
-      - examples$

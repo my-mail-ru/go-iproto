@@ -382,7 +382,7 @@ type ByteArray struct {
 	TypeExpr ast.Expr
 }
 
-func (ba ByteArray) EmitMarshaler(x ast.Expr, block []ast.Stmt) []ast.Stmt {
+func (ByteArray) EmitMarshaler(x ast.Expr, block []ast.Stmt) []ast.Stmt {
 	return emitAppendBuf([]ast.Expr{identBuf, &ast.SliceExpr{X: x}}, 1, block)
 }
 
@@ -428,7 +428,7 @@ func (s Struct) EmitUnmarshaler(x ast.Expr, block []ast.Stmt) []ast.Stmt {
 	return block
 }
 
-// used for map keys and values
+// StructLiteral is used for map keys and values
 type StructLiteral struct {
 	Fields   []StructField
 	TypeExpr ast.Expr

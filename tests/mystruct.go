@@ -68,4 +68,6 @@ type MyStruct struct {
 	MapIntInts            map[int][]Ints                 `iproto:"ber,i32,u8"`
 	MapMapSlice           map[string]map[string][]string `iproto:"ber,u8,ber,u8,ber,u8"`
 	MapSliceMap           map[string][]map[string]string `iproto:"ber,u8,ber,ber,u8,u8"`
+	IntPtr                *int                           `iproto:"ber"`
+	StructPtr             *Ints
 }

@@ -97,6 +97,10 @@ func TestMyStructMarshalUnmarshal(t *testing.T) {
 			{"who", "cares"},
 			{"a", "b", "c", "d"},
 		},
+		IntPtr: &[]int{123}[0],
+		StructPtr: &Ints{
+			Uint16: 12345,
+		},
 	}
 
 	bytes, err := orig.MarshalIProto(nil)
@@ -118,7 +122,11 @@ func TestMyStructMarshalUnmarshal(t *testing.T) {
 }
 
 func TestBoundCheck(t *testing.T) {
-	_, err := MyStruct{Ints: Ints{Clipped: 123456}}.MarshalIProto(nil)
+	_, err := MyStruct{
+		Ints:      Ints{Clipped: 123456},
+		IntPtr:    new(int),
+		StructPtr: &Ints{},
+	}.MarshalIProto(nil)
 
 	if !errors.Is(err, iproto.ErrOverflow) {
 		t.Errorf("got %v, want iproto.ErrOverflow", err)
@@ -131,6 +139,8 @@ func TestSliceLeak(t *testing.T) {
 		DefString: "Test",
 		Bytes:     []byte("test1234"),
 		DefBytes:  iprototypes.Bytes("zxcv9876"),
+		IntPtr:    new(int),
+		StructPtr: &Ints{},
 	}
 
 	buf, err := data.MarshalIProto(nil)
