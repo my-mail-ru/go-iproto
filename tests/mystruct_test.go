@@ -101,6 +101,20 @@ func TestMyStructMarshalUnmarshal(t *testing.T) {
 		StructPtr: &Ints{
 			Uint16: 12345,
 		},
+		GenericComplex: Event[Ints]{
+			Data: Ints{
+				Int8:    123,
+				DefInt8: iprototypes.Int8(-12),
+				Uint8:   129,
+				Uint16:  65533,
+				Uint32:  65537,
+			},
+			Type: EventType("STRUCT"),
+		},
+		GenericSimple: Event[string]{
+			Data: "simple string",
+			Type: EventType("STRING"),
+		},
 	}
 
 	bytes, err := orig.MarshalIProto(nil)

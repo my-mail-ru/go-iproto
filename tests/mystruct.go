@@ -35,6 +35,13 @@ type Ints struct {
 	Clipped   uint32             `iproto:"u16"`
 }
 
+type EventType string
+
+type Event[T any] struct {
+	Data T
+	Type EventType `iproto:"ber"`
+}
+
 //adv:iproto:
 type MyStruct struct {
 	Embedded
@@ -69,5 +76,7 @@ type MyStruct struct {
 	MapMapSlice           map[string]map[string][]string `iproto:"ber,u8,ber,u8,ber,u8"`
 	MapSliceMap           map[string][]map[string]string `iproto:"ber,u8,ber,ber,u8,u8"`
 	IntPtr                *int                           `iproto:"ber"`
-	StructPtr             *Ints
+	StructPtr             *Ints                          //
+	GenericComplex        Event[Ints]                    //
+	GenericSimple         Event[string]                  `iproto:"u16"`
 }

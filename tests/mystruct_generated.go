@@ -264,6 +264,28 @@ func (recvMyStruct MyStruct) MarshalIProto(buf []byte) ([]byte, error) {
 		return nil, fmt.Errorf("MarshalIProto: (*recvMyStruct.StructPtr).Clipped: %w: %d > %d", iproto.ErrOverflow, (*recvMyStruct.StructPtr).Clipped, 65535)
 	}
 	buf = append(buf, byte((*recvMyStruct.StructPtr).Clipped), byte((*recvMyStruct.StructPtr).Clipped>>8))
+	buf = iproto.EncodeBER(buf, uint64(recvMyStruct.GenericComplex.Data.IntField))
+	buf = iproto.EncodeBER(buf, uint64(recvMyStruct.GenericComplex.Data.InnerInt))
+	buf = append(buf, byte(recvMyStruct.GenericComplex.Data.Int8))
+	buf = append(buf, byte(recvMyStruct.GenericComplex.Data.DefInt8))
+	buf = append(buf, recvMyStruct.GenericComplex.Data.Uint8)
+	buf = append(buf, byte(recvMyStruct.GenericComplex.Data.Uint16), byte(recvMyStruct.GenericComplex.Data.Uint16>>8))
+	buf = append(buf, byte(recvMyStruct.GenericComplex.Data.Uint32), byte(recvMyStruct.GenericComplex.Data.Uint32>>8), byte(recvMyStruct.GenericComplex.Data.Uint32>>16), byte(recvMyStruct.GenericComplex.Data.Uint32>>24))
+	buf = append(buf, byte(recvMyStruct.GenericComplex.Data.Uint64), byte(recvMyStruct.GenericComplex.Data.Uint64>>8), byte(recvMyStruct.GenericComplex.Data.Uint64>>16), byte(recvMyStruct.GenericComplex.Data.Uint64>>24), byte(recvMyStruct.GenericComplex.Data.Uint64>>32), byte(recvMyStruct.GenericComplex.Data.Uint64>>40), byte(recvMyStruct.GenericComplex.Data.Uint64>>48), byte(recvMyStruct.GenericComplex.Data.Uint64>>56))
+	buf = append(buf, byte(recvMyStruct.GenericComplex.Data.DefUint8))
+	buf = append(buf, byte(recvMyStruct.GenericComplex.Data.DefUint16), byte(recvMyStruct.GenericComplex.Data.DefUint16>>8))
+	buf = append(buf, byte(recvMyStruct.GenericComplex.Data.DefUint32), byte(recvMyStruct.GenericComplex.Data.DefUint32>>8), byte(recvMyStruct.GenericComplex.Data.DefUint32>>16), byte(recvMyStruct.GenericComplex.Data.DefUint32>>24))
+	buf = append(buf, byte(recvMyStruct.GenericComplex.Data.DefUint64), byte(recvMyStruct.GenericComplex.Data.DefUint64>>8), byte(recvMyStruct.GenericComplex.Data.DefUint64>>16), byte(recvMyStruct.GenericComplex.Data.DefUint64>>24), byte(recvMyStruct.GenericComplex.Data.DefUint64>>32), byte(recvMyStruct.GenericComplex.Data.DefUint64>>40), byte(recvMyStruct.GenericComplex.Data.DefUint64>>48), byte(recvMyStruct.GenericComplex.Data.DefUint64>>56))
+	if recvMyStruct.GenericComplex.Data.Clipped > 65535 {
+		return nil, fmt.Errorf("MarshalIProto: RecvMyStruct.GenericComplex.Data.Clipped: %w: %d > %d", iproto.ErrOverflow, recvMyStruct.GenericComplex.Data.Clipped, 65535)
+	}
+	buf = append(buf, byte(recvMyStruct.GenericComplex.Data.Clipped), byte(recvMyStruct.GenericComplex.Data.Clipped>>8))
+	buf = iproto.EncodeBER(buf, uint64(len(recvMyStruct.GenericComplex.Type)))
+	buf = append(buf, recvMyStruct.GenericComplex.Type...)
+	buf = append(buf, byte(len(recvMyStruct.GenericSimple.Data)), byte(len(recvMyStruct.GenericSimple.Data)>>8), byte(len(recvMyStruct.GenericSimple.Data)>>16), byte(len(recvMyStruct.GenericSimple.Data)>>24))
+	buf = append(buf, recvMyStruct.GenericSimple.Data...)
+	buf = iproto.EncodeBER(buf, uint64(len(recvMyStruct.GenericSimple.Type)))
+	buf = append(buf, recvMyStruct.GenericSimple.Type...)
 	return buf, nil
 }
 func (recv_MyStruct *MyStruct) UnmarshalIProto(buf []byte) ([]byte, error) {
@@ -921,6 +943,101 @@ func (recv_MyStruct *MyStruct) UnmarshalIProto(buf []byte) ([]byte, error) {
 	}
 	recv_MyStruct.StructPtr.Clipped = uint32(binary.LittleEndian.Uint16(buf))
 	buf = buf[2:]
+	u64, buf, err = iproto.DecodeBER(buf)
+	if err != nil {
+		return nil, err
+	}
+	recv_MyStruct.GenericComplex.Data.IntField = MyInt(u64)
+	u64, buf, err = iproto.DecodeBER(buf)
+	if err != nil {
+		return nil, err
+	}
+	recv_MyStruct.GenericComplex.Data.InnerInt = innerpkg.InnerInt(u64)
+	if len(buf) < 1 {
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.GenericComplex.Data.Int8: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+	}
+	recv_MyStruct.GenericComplex.Data.Int8 = int8(buf[0])
+	buf = buf[1:]
+	if len(buf) < 1 {
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.GenericComplex.Data.DefInt8: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+	}
+	recv_MyStruct.GenericComplex.Data.DefInt8 = iprototypes.Int8(buf[0])
+	buf = buf[1:]
+	if len(buf) < 1 {
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.GenericComplex.Data.Uint8: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+	}
+	recv_MyStruct.GenericComplex.Data.Uint8 = buf[0]
+	buf = buf[1:]
+	if len(buf) < 2 {
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.GenericComplex.Data.Uint16: %w: %d < %d", iproto.ErrOverflow, len(buf), 2)
+	}
+	recv_MyStruct.GenericComplex.Data.Uint16 = binary.LittleEndian.Uint16(buf)
+	buf = buf[2:]
+	if len(buf) < 4 {
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.GenericComplex.Data.Uint32: %w: %d < %d", iproto.ErrOverflow, len(buf), 4)
+	}
+	recv_MyStruct.GenericComplex.Data.Uint32 = binary.LittleEndian.Uint32(buf)
+	buf = buf[4:]
+	if len(buf) < 8 {
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.GenericComplex.Data.Uint64: %w: %d < %d", iproto.ErrOverflow, len(buf), 8)
+	}
+	recv_MyStruct.GenericComplex.Data.Uint64 = binary.LittleEndian.Uint64(buf)
+	buf = buf[8:]
+	if len(buf) < 1 {
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.GenericComplex.Data.DefUint8: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+	}
+	recv_MyStruct.GenericComplex.Data.DefUint8 = iprototypes.Uint8(buf[0])
+	buf = buf[1:]
+	if len(buf) < 2 {
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.GenericComplex.Data.DefUint16: %w: %d < %d", iproto.ErrOverflow, len(buf), 2)
+	}
+	recv_MyStruct.GenericComplex.Data.DefUint16 = iprototypes.Uint16(binary.LittleEndian.Uint16(buf))
+	buf = buf[2:]
+	if len(buf) < 4 {
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.GenericComplex.Data.DefUint32: %w: %d < %d", iproto.ErrOverflow, len(buf), 4)
+	}
+	recv_MyStruct.GenericComplex.Data.DefUint32 = iprototypes.Uint32(binary.LittleEndian.Uint32(buf))
+	buf = buf[4:]
+	if len(buf) < 8 {
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.GenericComplex.Data.DefUint64: %w: %d < %d", iproto.ErrOverflow, len(buf), 8)
+	}
+	recv_MyStruct.GenericComplex.Data.DefUint64 = iprototypes.Uint64(binary.LittleEndian.Uint64(buf))
+	buf = buf[8:]
+	if len(buf) < 2 {
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.GenericComplex.Data.Clipped: %w: %d < %d", iproto.ErrOverflow, len(buf), 2)
+	}
+	recv_MyStruct.GenericComplex.Data.Clipped = uint32(binary.LittleEndian.Uint16(buf))
+	buf = buf[2:]
+	u64, buf, err = iproto.DecodeBER(buf)
+	if err != nil {
+		return nil, err
+	}
+	lenRecv_MyStruct_GenericComplex_Type := int(u64)
+	if len(buf) < lenRecv_MyStruct_GenericComplex_Type {
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.GenericComplex.Type: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_GenericComplex_Type)
+	}
+	recv_MyStruct.GenericComplex.Type = EventType(buf[:lenRecv_MyStruct_GenericComplex_Type])
+	buf = buf[lenRecv_MyStruct_GenericComplex_Type:]
+	if len(buf) < 4 {
+		return nil, fmt.Errorf("UnmarshalIProto: LenRecv_MyStruct_GenericSimple_Data: %w: %d < %d", iproto.ErrOverflow, len(buf), 4)
+	}
+	lenRecv_MyStruct_GenericSimple_Data := int(binary.LittleEndian.Uint32(buf))
+	buf = buf[4:]
+	if len(buf) < lenRecv_MyStruct_GenericSimple_Data {
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.GenericSimple.Data: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_GenericSimple_Data)
+	}
+	recv_MyStruct.GenericSimple.Data = string(buf[:lenRecv_MyStruct_GenericSimple_Data])
+	buf = buf[lenRecv_MyStruct_GenericSimple_Data:]
+	u64, buf, err = iproto.DecodeBER(buf)
+	if err != nil {
+		return nil, err
+	}
+	lenRecv_MyStruct_GenericSimple_Type := int(u64)
+	if len(buf) < lenRecv_MyStruct_GenericSimple_Type {
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.GenericSimple.Type: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_GenericSimple_Type)
+	}
+	recv_MyStruct.GenericSimple.Type = EventType(buf[:lenRecv_MyStruct_GenericSimple_Type])
+	buf = buf[lenRecv_MyStruct_GenericSimple_Type:]
 	return buf, nil
 }
 func (recvUUID UUID) MarshalIProto(buf []byte) ([]byte, error) {
