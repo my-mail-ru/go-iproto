@@ -126,6 +126,7 @@ func TestMyStructMarshalUnmarshal(t *testing.T) {
 		TimeNano:         time.Unix(1733506469, 123456789),
 		TimeNanoExplicit: time.Unix(1733506469, 987654321),
 		TimeUnix:         time.Unix(1733506469, 0),
+		TimeAlias:        time.Unix(1733506469, 555555555),
 	}
 
 	bytes, err := orig.MarshalIProto(nil)

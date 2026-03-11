@@ -303,6 +303,8 @@ func (recvMyStruct MyStruct) MarshalIProto(buf []byte) ([]byte, error) {
 	buf = append(buf, byte(nanoRecvMyStruct_TimeNanoExplicit), byte(nanoRecvMyStruct_TimeNanoExplicit>>8), byte(nanoRecvMyStruct_TimeNanoExplicit>>16), byte(nanoRecvMyStruct_TimeNanoExplicit>>24), byte(nanoRecvMyStruct_TimeNanoExplicit>>32), byte(nanoRecvMyStruct_TimeNanoExplicit>>40), byte(nanoRecvMyStruct_TimeNanoExplicit>>48), byte(nanoRecvMyStruct_TimeNanoExplicit>>56))
 	secRecvMyStruct_TimeUnix := uint32(recvMyStruct.TimeUnix.Unix())
 	buf = append(buf, byte(secRecvMyStruct_TimeUnix), byte(secRecvMyStruct_TimeUnix>>8), byte(secRecvMyStruct_TimeUnix>>16), byte(secRecvMyStruct_TimeUnix>>24))
+	nanoRecvMyStruct_TimeAlias := recvMyStruct.TimeAlias.UnixNano()
+	buf = append(buf, byte(nanoRecvMyStruct_TimeAlias), byte(nanoRecvMyStruct_TimeAlias>>8), byte(nanoRecvMyStruct_TimeAlias>>16), byte(nanoRecvMyStruct_TimeAlias>>24), byte(nanoRecvMyStruct_TimeAlias>>32), byte(nanoRecvMyStruct_TimeAlias>>40), byte(nanoRecvMyStruct_TimeAlias>>48), byte(nanoRecvMyStruct_TimeAlias>>56))
 	return buf, nil
 }
 func (recv_MyStruct *MyStruct) UnmarshalIProto(buf []byte) ([]byte, error) {
@@ -1104,6 +1106,12 @@ func (recv_MyStruct *MyStruct) UnmarshalIProto(buf []byte) ([]byte, error) {
 	secRecv_MyStruct_TimeUnix := binary.LittleEndian.Uint32(buf)
 	buf = buf[4:]
 	recv_MyStruct.TimeUnix = time.Unix(int64(secRecv_MyStruct_TimeUnix), 0)
+	if len(buf) < 8 {
+		return nil, fmt.Errorf("UnmarshalIProto: NanoRecv_MyStruct_TimeAlias: %w: %d < %d", iproto.ErrOverflow, len(buf), 8)
+	}
+	nanoRecv_MyStruct_TimeAlias := int64(binary.LittleEndian.Uint64(buf))
+	buf = buf[8:]
+	recv_MyStruct.TimeAlias = time.Unix(0, nanoRecv_MyStruct_TimeAlias)
 	return buf, nil
 }
 func (recvUUID UUID) MarshalIProto(buf []byte) ([]byte, error) {

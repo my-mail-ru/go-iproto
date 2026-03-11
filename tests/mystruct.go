@@ -38,6 +38,7 @@ type Ints struct {
 }
 
 type EventType string
+type myTime = time.Time
 
 type Event[T any] struct {
 	Data T
@@ -85,4 +86,5 @@ type MyStruct struct {
 	TimeNano              time.Time                      //
 	TimeNanoExplicit      time.Time                      `iproto:"i64"`
 	TimeUnix              time.Time                      `iproto:"u32"`
+	TimeAlias             myTime                         //
 }

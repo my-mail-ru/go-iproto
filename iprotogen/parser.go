@@ -670,7 +670,7 @@ func parseTimeType(_ ast.Expr, _ types.Type, tag *structtag.Tag) (Type, error) {
 // resolveHardcodedType checks if goType matches a registered hardcoded type,
 // following type aliases and checking both default and user-supplied package names.
 func resolveHardcodedType(goType types.Type) hardcodedTypeParser {
-	named, ok := goType.(*types.Named)
+	named, ok := types.Unalias(goType).(*types.Named)
 	if !ok {
 		return nil
 	}
