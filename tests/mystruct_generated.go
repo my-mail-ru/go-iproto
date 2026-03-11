@@ -286,6 +286,16 @@ func (recvMyStruct MyStruct) MarshalIProto(buf []byte) ([]byte, error) {
 	buf = append(buf, recvMyStruct.GenericSimple.Data...)
 	buf = iproto.EncodeBER(buf, uint64(len(recvMyStruct.GenericSimple.Type)))
 	buf = append(buf, recvMyStruct.GenericSimple.Type...)
+	if len(recvMyStruct.GenericSlice) > 65535 {
+		return nil, fmt.Errorf("MarshalIProto: Len(recvMyStruct.GenericSlice): %w: %d > %d", iproto.ErrOverflow, len(recvMyStruct.GenericSlice), 65535)
+	}
+	buf = append(buf, byte(len(recvMyStruct.GenericSlice)), byte(len(recvMyStruct.GenericSlice)>>8))
+	for _, elemRecvMyStruct_GenericSlice := range recvMyStruct.GenericSlice {
+		buf = append(buf, byte(len(elemRecvMyStruct_GenericSlice.Data)), byte(len(elemRecvMyStruct_GenericSlice.Data)>>8), byte(len(elemRecvMyStruct_GenericSlice.Data)>>16), byte(len(elemRecvMyStruct_GenericSlice.Data)>>24))
+		buf = append(buf, elemRecvMyStruct_GenericSlice.Data...)
+		buf = iproto.EncodeBER(buf, uint64(len(elemRecvMyStruct_GenericSlice.Type)))
+		buf = append(buf, elemRecvMyStruct_GenericSlice.Type...)
+	}
 	return buf, nil
 }
 func (recv_MyStruct *MyStruct) UnmarshalIProto(buf []byte) ([]byte, error) {
@@ -1038,6 +1048,37 @@ func (recv_MyStruct *MyStruct) UnmarshalIProto(buf []byte) ([]byte, error) {
 	}
 	recv_MyStruct.GenericSimple.Type = EventType(buf[:lenRecv_MyStruct_GenericSimple_Type])
 	buf = buf[lenRecv_MyStruct_GenericSimple_Type:]
+	if len(buf) < 2 {
+		return nil, fmt.Errorf("UnmarshalIProto: LenRecv_MyStruct_GenericSlice: %w: %d < %d", iproto.ErrOverflow, len(buf), 2)
+	}
+	lenRecv_MyStruct_GenericSlice := int(binary.LittleEndian.Uint16(buf))
+	buf = buf[2:]
+	if len(buf) < lenRecv_MyStruct_GenericSlice {
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.GenericSlice: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_GenericSlice)
+	}
+	recv_MyStruct.GenericSlice = make([]Event[string], lenRecv_MyStruct_GenericSlice)
+	for iRecv_MyStruct_GenericSlice := 0; iRecv_MyStruct_GenericSlice < lenRecv_MyStruct_GenericSlice; iRecv_MyStruct_GenericSlice++ {
+		if len(buf) < 4 {
+			return nil, fmt.Errorf("UnmarshalIProto: LenRecv_MyStruct_GenericSlice_iRecv_MyStruct_GenericSlice__Data: %w: %d < %d", iproto.ErrOverflow, len(buf), 4)
+		}
+		lenRecv_MyStruct_GenericSlice_iRecv_MyStruct_GenericSlice__Data := int(binary.LittleEndian.Uint32(buf))
+		buf = buf[4:]
+		if len(buf) < lenRecv_MyStruct_GenericSlice_iRecv_MyStruct_GenericSlice__Data {
+			return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.GenericSlice[iRecv_MyStruct_GenericSlice].Data: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_GenericSlice_iRecv_MyStruct_GenericSlice__Data)
+		}
+		recv_MyStruct.GenericSlice[iRecv_MyStruct_GenericSlice].Data = string(buf[:lenRecv_MyStruct_GenericSlice_iRecv_MyStruct_GenericSlice__Data])
+		buf = buf[lenRecv_MyStruct_GenericSlice_iRecv_MyStruct_GenericSlice__Data:]
+		u64, buf, err = iproto.DecodeBER(buf)
+		if err != nil {
+			return nil, err
+		}
+		lenRecv_MyStruct_GenericSlice_iRecv_MyStruct_GenericSlice__Type := int(u64)
+		if len(buf) < lenRecv_MyStruct_GenericSlice_iRecv_MyStruct_GenericSlice__Type {
+			return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.GenericSlice[iRecv_MyStruct_GenericSlice].Type: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_GenericSlice_iRecv_MyStruct_GenericSlice__Type)
+		}
+		recv_MyStruct.GenericSlice[iRecv_MyStruct_GenericSlice].Type = EventType(buf[:lenRecv_MyStruct_GenericSlice_iRecv_MyStruct_GenericSlice__Type])
+		buf = buf[lenRecv_MyStruct_GenericSlice_iRecv_MyStruct_GenericSlice__Type:]
+	}
 	return buf, nil
 }
 func (recvUUID UUID) MarshalIProto(buf []byte) ([]byte, error) {

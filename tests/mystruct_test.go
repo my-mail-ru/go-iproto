@@ -115,6 +115,13 @@ func TestMyStructMarshalUnmarshal(t *testing.T) {
 			Data: "simple string",
 			Type: EventType("STRING"),
 		},
+		GenericSlice: []Event[string]{{
+			Data: "foobar",
+			Type: EventType("STRING"),
+		}, {
+			Data: "barbaz",
+			Type: EventType("STRING"),
+		}},
 	}
 
 	bytes, err := orig.MarshalIProto(nil)

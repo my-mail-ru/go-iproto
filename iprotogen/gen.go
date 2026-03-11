@@ -413,7 +413,7 @@ func newImportMaps() (map[string]string, map[string]struct{}) {
 
 	for pkg, alias := range byPkg {
 		if alias == "" {
-			alias = path.Base(pkg) // valid for stdlib pkgs only
+			alias = path.Base(pkg) // XXX is valid for stdlib pkgs only
 		}
 
 		byAlias[alias] = struct{}{}

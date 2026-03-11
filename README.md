@@ -1,3 +1,5 @@
+[![Go Reference](https://pkg.go.dev/badge/github.com/my-mail-ru/go-iproto.svg)](https://pkg.go.dev/github.com/my-mail-ru/go-iproto)
+
 # iproto - библиотека для сериализации структур в формате протокола iproto.
 
 [[_TOC_]]

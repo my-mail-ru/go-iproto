@@ -79,4 +79,5 @@ type MyStruct struct {
 	StructPtr             *Ints                          //
 	GenericComplex        Event[Ints]                    //
 	GenericSimple         Event[string]                  `iproto:"u16"`
+	GenericSlice          []Event[string]                `iproto:"u16,u8"`
 }

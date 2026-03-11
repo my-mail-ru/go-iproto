@@ -201,7 +201,7 @@ func (f *File) TypeToExpr(typ types.Type, pos token.Pos) (ast.Expr, error) {
 	return expr, nil
 }
 
-// we can't wrap the Pos() using a custom type because the go/printer is full of type switches.
+// we can't just wrap the Pos() using a custom type because the go/printer is full of type switches.
 func setExprPos(expr ast.Expr, pos token.Pos) {
 	// only the nodes that can be used inside a type expression
 	switch x := expr.(type) {
