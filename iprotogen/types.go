@@ -515,7 +515,7 @@ type TimeUnixNanoI64 struct{}
 
 func (TimeUnixNanoI64) EmitMarshaler(x ast.Expr, block []ast.Stmt) []ast.Stmt {
 	nanoVar := varFromExpr(x, "nano")
-	block = append(block, stmtDefine(nanoVar, exprCall(exprDot(x, ast.NewIdent("UnixNano")))))
+	block = append(block, stmtDefine(nanoVar, exprCall(exprDot(x, identUnixNano))))
 
 	return Integer{TypeExpr: identInt64, Size: 8}.EmitMarshaler(nanoVar, block)
 }
@@ -533,7 +533,7 @@ type TimeUnixU32 struct{}
 
 func (TimeUnixU32) EmitMarshaler(x ast.Expr, block []ast.Stmt) []ast.Stmt {
 	secVar := varFromExpr(x, "sec")
-	block = append(block, stmtDefine(secVar, exprCall(identUint32, exprCall(exprDot(x, ast.NewIdent("Unix"))))))
+	block = append(block, stmtDefine(secVar, exprCall(identUint32, exprCall(exprDot(x, identUnix)))))
 
 	return Integer{TypeExpr: identUint32, Size: 4}.EmitMarshaler(secVar, block)
 }

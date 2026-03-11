@@ -55,7 +55,9 @@ var (
 	exprFloat32frombits = exprDot(identMath, ast.NewIdent("Float32frombits"))
 	exprFloat64frombits = exprDot(identMath, ast.NewIdent("Float64frombits"))
 	exprLittleEndian    = exprDot(ast.NewIdent("binary"), ast.NewIdent("LittleEndian"))
-	exprTimeUnix        = exprDot(ast.NewIdent("time"), ast.NewIdent("Unix"))
+	identUnix           = ast.NewIdent("Unix")
+	identUnixNano       = ast.NewIdent("UnixNano")
+	exprTimeUnix        = exprDot(ast.NewIdent("time"), identUnix)
 	exprLenBuf          = exprCall(identLen, identBuf)
 	exprBytes           = &ast.ArrayType{Elt: identByte}
 	exprBufErr          = []ast.Expr{identBuf, identErr}

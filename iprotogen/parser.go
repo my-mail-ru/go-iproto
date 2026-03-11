@@ -646,7 +646,7 @@ func (sf sameFileChecker) check(fname string) (bool, error) {
 // hardcodedTypeParser is a custom parser for a hardcoded (built-in) type.
 type hardcodedTypeParser func(expr ast.Expr, goType types.Type, tag *structtag.Tag) (Type, error)
 
-// hardcodedTypes maps fully-qualified type names (e.g. "time.Time") to their custom parsers.
+// hardcodedTypes maps fully-qualified type paths (e.g. "time.Time") to their custom parsers.
 var hardcodedTypes = map[string]hardcodedTypeParser{
 	"time.Time": parseTimeType,
 }
@@ -682,7 +682,7 @@ func resolveHardcodedType(goType types.Type) hardcodedTypeParser {
 		return nil
 	}
 
-	key := pkg.Name() + "." + obj.Name()
+	key := pkg.Path() + "." + obj.Name()
 	if p, ok := hardcodedTypes[key]; ok {
 		return p
 	}
