@@ -201,7 +201,7 @@ func (f *File) TypeToExpr(typ types.Type, pos token.Pos) (ast.Expr, error) {
 	return expr, nil
 }
 
-// we can't wrap the Pos() using a custom type because the go/printer is full of type switches.
+// we can't just wrap the Pos() using a custom type because the go/printer is full of type switches.
 func setExprPos(expr ast.Expr, pos token.Pos) {
 	// only the nodes that can be used inside a type expression
 	switch x := expr.(type) {
@@ -643,7 +643,58 @@ func (sf sameFileChecker) check(fname string) (bool, error) {
 	return os.SameFile(sf.finfo, finfo), nil
 }
 
+// hardcodedTypeParser is a custom parser for a hardcoded (built-in) type.
+type hardcodedTypeParser func(expr ast.Expr, goType types.Type, tag *structtag.Tag) (Type, error)
+
+// hardcodedTypes maps fully-qualified type names (e.g. "time.Time") to their custom parsers.
+var hardcodedTypes = map[string]hardcodedTypeParser{
+	"time.Time": parseTimeType,
+}
+
+func parseTimeType(_ ast.Expr, _ types.Type, tag *structtag.Tag) (Type, error) {
+	tagName := tag.Name
+	if tagName == "" {
+		tagName = i64
+	}
+
+	switch tagName {
+	case i64:
+		return TimeUnixNanoI64{}, nil
+	case u32:
+		return TimeUnixU32{}, nil
+	default:
+		return nil, fmt.Errorf("unsupported tag %q for time.Time: expected %q (default) or %q", tagName, i64, u32)
+	}
+}
+
+// resolveHardcodedType checks if goType matches a registered hardcoded type,
+// following type aliases and checking both default and user-supplied package names.
+func resolveHardcodedType(goType types.Type) hardcodedTypeParser {
+	named, ok := types.Unalias(goType).(*types.Named)
+	if !ok {
+		return nil
+	}
+
+	obj := named.Obj()
+
+	pkg := obj.Pkg()
+	if pkg == nil {
+		return nil
+	}
+
+	key := pkg.Name() + "." + obj.Name()
+	if p, ok := hardcodedTypes[key]; ok {
+		return p
+	}
+
+	return nil
+}
+
 func (pp *pkgParser) parseType(expr ast.Expr, goType types.Type, tag *structtag.Tag, needStructLit bool) (Type, error) {
+	if p := resolveHardcodedType(goType); p != nil {
+		return p(expr, goType, tag)
+	}
+
 	marshalerRecvType := goType
 	unmarshalerRecvType := goType
 	goType = goType.Underlying()
@@ -702,6 +753,7 @@ type intParams struct {
 const (
 	u8  = "u8"
 	u32 = "u32"
+	i64 = "i64"
 )
 
 var intTags = map[string]intParams{
@@ -712,7 +764,7 @@ var intTags = map[string]intParams{
 	"i8":  {size: 1, min: -128, max: 127},
 	"i16": {size: 2, min: -32768, max: 32767},
 	"i32": {size: 4, min: -0x80000000, max: 0x7FFFFFFF},
-	"i64": {size: 8},
+	i64:   {size: 8},
 	"ber": {size: 0},
 }
 
@@ -720,7 +772,7 @@ var intDefaultTag = map[types.BasicKind]string{
 	types.Int8:   "i8",
 	types.Int16:  "i16",
 	types.Int32:  "i32",
-	types.Int64:  "i64",
+	types.Int64:  i64,
 	types.Uint8:  u8,
 	types.Uint16: "u16",
 	types.Uint32: u32,

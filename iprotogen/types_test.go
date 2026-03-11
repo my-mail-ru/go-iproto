@@ -13,6 +13,12 @@ func TestTypes(t *testing.T) {
 		disallowed []string
 	}{
 		{
+			in:       TimeUnixNanoI64{},
+			required: []string{"x.UnixNano()", ">>56"},
+		}, {
+			in:       TimeUnixU32{},
+			required: []string{"uint32(x.Unix())", ">>24"},
+		}, {
 			in:         Slice{LenType: Integer{Size: 0}, ElemType: Dumb{}},
 			required:   []string{"iproto.EncodeBER", "for _, elemX := range x"},
 			disallowed: []string{"append"},

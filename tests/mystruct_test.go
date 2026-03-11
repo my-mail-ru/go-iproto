@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"testing"
+	"time"
 	"unsafe"
 
 	"github.com/google/go-cmp/cmp"
@@ -115,6 +116,17 @@ func TestMyStructMarshalUnmarshal(t *testing.T) {
 			Data: "simple string",
 			Type: EventType("STRING"),
 		},
+		GenericSlice: []Event[string]{{
+			Data: "foobar",
+			Type: EventType("STRING"),
+		}, {
+			Data: "barbaz",
+			Type: EventType("STRING"),
+		}},
+		TimeNano:         time.Unix(1733506469, 123456789),
+		TimeNanoExplicit: time.Unix(1733506469, 987654321),
+		TimeUnix:         time.Unix(1733506469, 0),
+		TimeAlias:        time.Unix(1733506469, 555555555),
 	}
 
 	bytes, err := orig.MarshalIProto(nil)

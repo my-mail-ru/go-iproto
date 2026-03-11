@@ -1,3 +1,5 @@
+[![Go Reference](https://pkg.go.dev/badge/github.com/my-mail-ru/go-iproto.svg)](https://pkg.go.dev/github.com/my-mail-ru/go-iproto)
+
 # iproto - библиотека для сериализации структур в формате протокола iproto.
 
 [[_TOC_]]
@@ -97,6 +99,7 @@ $ go get -tool github.com/my-mail-ru/go-iproto/cmd/iprotogen
 - Структуры с полями поддерживаемых типов. Сериализуются все публичные поля. Изменить дефолтный тип можно указанием тега.
 - Указатели на поддерживаемые типы.
 - Типы, определённые на базе поддерживаемых.
+- `time.Time` (подробнее в разделе «time.Time»).
 
 # Теги
 
@@ -176,6 +179,28 @@ type Bools struct {
     Custom     bool `iproto:"true: 49, false: 48"`   // true - 49,  false - 48
     CustomTrue bool `iproto:"true: 0xFF"`            // true - 255, false - 0
     CustomChar bool `iproto:"true: 't', false: 'f'"`
+}
+```
+
+# time.Time
+
+Поддерживается сериализация `time.Time` в двух форматах, задаваемых тегом:
+
+| Тег | Формат | Описание | Диапазон |
+|--|--|--|--|
+| `i64` (по умолчанию) | int64, наносекунды с Unix epoch | `time.Time.UnixNano()` / `time.Unix(0, n)` | 1677-09-21T00:12:43Z — 2262-04-11T23:47:16Z |
+| `u32` | uint32, секунды с Unix epoch | `time.Time.Unix()` / `time.Unix(s, 0)` | 1970-01-01T00:00:00Z — 2106-02-07T06:28:15Z |
+
+Можно использовать как `time.Time` напрямую, так и через алиас:
+```go
+type myTime = time.Time
+
+//adv:iproto:
+type MyStruct struct {
+    CreatedAt time.Time              // по умолчанию i64 (наносекунды)
+    UpdatedAt time.Time `iproto:"i64"` // наносекунды (явно)
+    ExpiredAt time.Time `iproto:"u32"` // секунды
+    AliasTime myTime                 // алиасы поддерживаются
 }
 ```
 
