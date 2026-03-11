@@ -643,9 +643,60 @@ func (sf sameFileChecker) check(fname string) (bool, error) {
 	return os.SameFile(sf.finfo, finfo), nil
 }
 
+// hardcodedTypeParser is a custom parser for a hardcoded (built-in) type.
+type hardcodedTypeParser func(expr ast.Expr, goType types.Type, tag *structtag.Tag) (Type, error)
+
+// hardcodedTypes maps fully-qualified type names (e.g. "time.Time") to their custom parsers.
+var hardcodedTypes = map[string]hardcodedTypeParser{
+	"time.Time": parseTimeType,
+}
+
+func parseTimeType(_ ast.Expr, _ types.Type, tag *structtag.Tag) (Type, error) {
+	tagName := tag.Name
+	if tagName == "" {
+		tagName = "i64"
+	}
+
+	switch tagName {
+	case "i64":
+		return TimeUnixNanoI64{}, nil
+	case "u32":
+		return TimeUnixU32{}, nil
+	default:
+		return nil, fmt.Errorf("unsupported tag %q for time.Time: expected \"i64\" (default) or \"u32\"", tagName)
+	}
+}
+
+// resolveHardcodedType checks if goType matches a registered hardcoded type,
+// following type aliases and checking both default and user-supplied package names.
+func resolveHardcodedType(goType types.Type) hardcodedTypeParser {
+	named, ok := goType.(*types.Named)
+	if !ok {
+		return nil
+	}
+
+	obj := named.Obj()
+	pkg := obj.Pkg()
+	if pkg == nil {
+		return nil
+	}
+
+	key := pkg.Name() + "." + obj.Name()
+	if p, ok := hardcodedTypes[key]; ok {
+		return p
+	}
+
+	return nil
+}
+
 func (pp *pkgParser) parseType(expr ast.Expr, goType types.Type, tag *structtag.Tag, needStructLit bool) (Type, error) {
 	marshalerRecvType := goType
 	unmarshalerRecvType := goType
+
+	if p := resolveHardcodedType(goType); p != nil {
+		return p(expr, goType, tag)
+	}
+
 	goType = goType.Underlying()
 
 	if _, isIface := goType.(*types.Interface); !isIface {

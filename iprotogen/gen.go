@@ -41,6 +41,7 @@ var (
 	identNil             = ast.NewIdent("nil")
 	identU64             = ast.NewIdent("u64")
 	identInt             = ast.NewIdent("int")
+	identInt64           = ast.NewIdent("int64")
 	identUint32          = ast.NewIdent("uint32")
 	identUint64          = ast.NewIdent("uint64")
 	identUnmarshalIProto = ast.NewIdent("UnmarshalIProto")
@@ -54,6 +55,7 @@ var (
 	exprFloat32frombits = exprDot(identMath, ast.NewIdent("Float32frombits"))
 	exprFloat64frombits = exprDot(identMath, ast.NewIdent("Float64frombits"))
 	exprLittleEndian    = exprDot(ast.NewIdent("binary"), ast.NewIdent("LittleEndian"))
+	exprTimeUnix        = exprDot(ast.NewIdent("time"), ast.NewIdent("Unix"))
 	exprLenBuf          = exprCall(identLen, identBuf)
 	exprBytes           = &ast.ArrayType{Elt: identByte}
 	exprBufErr          = []ast.Expr{identBuf, identErr}
@@ -406,6 +408,7 @@ func newImportMaps() (map[string]string, map[string]struct{}) {
 		"fmt":             "",
 		"math":            "",
 		"slices":          "",
+		"time":            "",
 		"encoding/binary": "",
 	}
 

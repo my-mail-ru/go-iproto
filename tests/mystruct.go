@@ -1,6 +1,8 @@
 package iprototest
 
 import (
+	"time"
+
 	"github.com/my-mail-ru/go-iproto/tests/innerpkg"
 	iprototypes "github.com/my-mail-ru/go-iproto/types"
 )
@@ -80,4 +82,7 @@ type MyStruct struct {
 	GenericComplex        Event[Ints]                    //
 	GenericSimple         Event[string]                  `iproto:"u16"`
 	GenericSlice          []Event[string]                `iproto:"u16,u8"`
+	TimeNano              time.Time                      //
+	TimeNanoExplicit      time.Time                      `iproto:"i64"`
+	TimeUnix              time.Time                      `iproto:"u32"`
 }

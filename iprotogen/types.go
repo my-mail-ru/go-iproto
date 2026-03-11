@@ -509,6 +509,42 @@ func (c Custom) EmitUnmarshaler(x ast.Expr, block []ast.Stmt) []ast.Stmt {
 	)
 }
 
+// TimeUnixNanoI64 serializes time.Time as nanoseconds since the Unix epoch in int64.
+// Range: 1677-09-21T00:12:43Z to 2262-04-11T23:47:16Z.
+type TimeUnixNanoI64 struct{}
+
+func (TimeUnixNanoI64) EmitMarshaler(x ast.Expr, block []ast.Stmt) []ast.Stmt {
+	nanoVar := varFromExpr(x, "nano")
+	block = append(block, stmtDefine(nanoVar, exprCall(exprDot(x, ast.NewIdent("UnixNano")))))
+
+	return Integer{TypeExpr: identInt64, Size: 8}.EmitMarshaler(nanoVar, block)
+}
+
+func (TimeUnixNanoI64) EmitUnmarshaler(x ast.Expr, block []ast.Stmt) []ast.Stmt {
+	nanoVar := varFromExpr(x, "nano")
+	block = Integer{TypeExpr: identInt64, Size: 8}.EmitUnmarshaler(nanoVar, block)
+
+	return emitVarAssign(x, exprCall(exprTimeUnix, lit0, nanoVar), block)
+}
+
+// TimeUnixU32 serializes time.Time as seconds since the Unix epoch in uint32.
+// Range: 1970-01-01T00:00:00Z to 2106-02-07T06:28:15Z.
+type TimeUnixU32 struct{}
+
+func (TimeUnixU32) EmitMarshaler(x ast.Expr, block []ast.Stmt) []ast.Stmt {
+	secVar := varFromExpr(x, "sec")
+	block = append(block, stmtDefine(secVar, exprCall(identUint32, exprCall(exprDot(x, ast.NewIdent("Unix"))))))
+
+	return Integer{TypeExpr: identUint32, Size: 4}.EmitMarshaler(secVar, block)
+}
+
+func (TimeUnixU32) EmitUnmarshaler(x ast.Expr, block []ast.Stmt) []ast.Stmt {
+	secVar := varFromExpr(x, "sec")
+	block = Integer{TypeExpr: identUint32, Size: 4}.EmitUnmarshaler(secVar, block)
+
+	return emitVarAssign(x, exprCall(exprTimeUnix, exprCall(identInt64, secVar), lit0), block)
+}
+
 type Dumb struct{}
 
 func (Dumb) EmitMarshaler(x ast.Expr, block []ast.Stmt) []ast.Stmt {
