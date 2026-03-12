@@ -662,6 +662,10 @@ var hardcodedTypes = map[string]hardcodedTypeParser{
 }
 
 func parseTimeType(_ ast.Expr, _ types.Type, tag *structtag.Tag) (Type, error) {
+	if len(tag.Options) != 0 {
+		return nil, fmt.Errorf("unsupported tag options for time.Time: %v", tag.Options)
+	}
+
 	tagName := tag.Name
 	if tagName == "" {
 		tagName = i64
@@ -854,6 +858,10 @@ func (pp *pkgParser) parseType(expr ast.Expr, goType types.Type, tag *structtag.
 	hasUnmarshaler := pp.hasHandwrittenImpl(unmarshalerRecvType, pp.ifaceUnmarshal)
 
 	if hasMarshaler || hasUnmarshaler {
+		if err := rejectTag(expr, tag); err != nil {
+			return nil, err
+		}
+
 		return Custom{
 			hasMarshaler:   hasMarshaler,
 			hasUnmarshaler: hasUnmarshaler,
@@ -881,6 +889,10 @@ func (pp *pkgParser) parseType(expr ast.Expr, goType types.Type, tag *structtag.
 	case *types.Map:
 		ret, err = pp.parseMap(expr, goType, tag)
 	case *types.Struct:
+		if err := rejectTag(expr, tag); err != nil {
+			return nil, err
+		}
+
 		ret, err = pp.parseStruct(expr, goType, needStructLit)
 	case *types.Pointer:
 		ret, err = pp.parsePointer(expr, goType, tag)
@@ -894,6 +906,16 @@ func (pp *pkgParser) parseType(expr ast.Expr, goType types.Type, tag *structtag.
 	}
 
 	return ret, nil
+}
+
+// rejectTag returns an error if the tag has any value (name or options).
+// Use this for types that don't support tags (structs, custom types).
+func rejectTag(expr ast.Expr, tag *structtag.Tag) error {
+	if tag.Name != "" || len(tag.Options) != 0 {
+		return fmt.Errorf("%s: tags are not supported for this type", astToSource(expr))
+	}
+
+	return nil
 }
 
 type intParams struct {
@@ -1104,6 +1126,10 @@ func (pp *pkgParser) parseSlice(expr ast.Expr, sl *types.Slice, tag *structtag.T
 	if elemTag.Name == "" || elemTag.Name == u8 {
 		// check the exact (not an underlying) type - a conversion from []byte to []Defined will not work
 		if basic, ok := elemGoType.(*types.Basic); ok && basic.Kind() == types.Uint8 {
+			if len(elemTag.Options) != 0 {
+				return nil, fmt.Errorf("%v: unsupported tag options for byte slice: %v", expr, elemTag.Options)
+			}
+
 			return StringOrBytes{
 				TypeExpr: expr,
 				LenType:  lenType,
@@ -1143,6 +1169,10 @@ func (pp *pkgParser) parseArray(expr ast.Expr, arrType *types.Array, elemTag *st
 	if elemTag.Name == "" || elemTag.Name == u8 {
 		// check the exact (not an underlying) type - a conversion from [...]byte to [...]Defined will not work
 		if basic, ok := elemGoType.(*types.Basic); ok && basic.Kind() == types.Uint8 {
+			if len(elemTag.Options) != 0 {
+				return nil, fmt.Errorf("%v: unsupported tag options for byte array: %v", expr, elemTag.Options)
+			}
+
 			return ByteArray{
 				Len:      lenExpr,
 				TypeExpr: expr,
