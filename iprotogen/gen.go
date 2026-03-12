@@ -55,6 +55,9 @@ var (
 	exprFloat32frombits = exprDot(identMath, ast.NewIdent("Float32frombits"))
 	exprFloat64frombits = exprDot(identMath, ast.NewIdent("Float64frombits"))
 	exprLittleEndian    = exprDot(ast.NewIdent("binary"), ast.NewIdent("LittleEndian"))
+	identTrue           = ast.NewIdent("true")
+	identFalse          = ast.NewIdent("false")
+	identValid          = ast.NewIdent("Valid")
 	identUnix           = ast.NewIdent("Unix")
 	identUnixNano       = ast.NewIdent("UnixNano")
 	exprTimeUnix        = exprDot(ast.NewIdent("time"), identUnix)
@@ -407,6 +410,7 @@ func varFromExpr(x ast.Expr, prefix string) *ast.Ident {
 func newImportMaps() (map[string]string, map[string]struct{}) {
 	byPkg := map[string]string{
 		iprotoPackage:     "iproto",
+		"database/sql":    "",
 		"fmt":             "",
 		"math":            "",
 		"slices":          "",
@@ -539,7 +543,7 @@ func isByteSlice(typ ast.Expr) bool {
 }
 
 func isByte(name string) bool {
-	return name == "uint8" || name == "byte"
+	return name == "uint8" || name == identByte.Name
 }
 
 func isIdent(expr ast.Expr, name string) bool {
