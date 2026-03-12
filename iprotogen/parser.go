@@ -646,9 +646,6 @@ func (sf sameFileChecker) check(fname string) (bool, error) {
 // hardcodedTypeParser is a custom parser for a hardcoded (built-in) type.
 type hardcodedTypeParser func(pp *pkgParser, expr ast.Expr, goType types.Type, tag *structtag.Tag) (Type, error)
 
-// getHardcodedTypes returns a map of fully-qualified type paths to their custom parsers.
-// A parser returning (nil, nil) signals fallthrough to default parsing.
-// Uses sync.OnceValue to avoid initialization cycle with parseSQLGenericNull → parseType → resolveHardcodedType.
 // hardcodedTypes maps fully-qualified type paths (e.g. "time.Time") to their custom parsers.
 // A parser returning (nil, nil) signals fallthrough to default parsing.
 // sql.Null[T] (generic) is handled separately in resolveHardcodedType to avoid an init cycle.
@@ -779,9 +776,7 @@ func resolveHardcodedType(goType types.Type) hardcodedTypeParser {
 	// sql.Null[T] (generic) is handled separately to avoid an init cycle:
 	// parseSQLGenericNull → parseType → resolveHardcodedType → hardcodedTypes.
 	if key == "database/sql.Null" {
-		return func(pp *pkgParser, expr ast.Expr, goType types.Type, tag *structtag.Tag) (Type, error) {
-			return pp.parseSQLGenericNull(expr, goType, tag)
-		}
+		return (*pkgParser).parseSQLGenericNull
 	}
 
 	return nil
