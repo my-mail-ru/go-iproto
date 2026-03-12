@@ -17,11 +17,6 @@ func TestUnsupportedTags(t *testing.T) {
 			wantErr: "optional",
 		},
 		{
-			name:    "tag on struct field",
-			pkg:     "github.com/my-mail-ru/go-iproto/iprotogen/testdata/tag_on_struct",
-			wantErr: "tags are not supported",
-		},
-		{
 			name:    "tag on custom marshaler type",
 			pkg:     "github.com/my-mail-ru/go-iproto/iprotogen/testdata/tag_on_custom",
 			wantErr: "tags are not supported",

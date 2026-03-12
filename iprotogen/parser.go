@@ -644,24 +644,27 @@ func (sf sameFileChecker) check(fname string) (bool, error) {
 }
 
 // hardcodedTypeParser is a custom parser for a hardcoded (built-in) type.
-type hardcodedTypeParser func(expr ast.Expr, goType types.Type, tag *structtag.Tag) (Type, error)
+type hardcodedTypeParser func(pp *pkgParser, expr ast.Expr, goType types.Type, tag *structtag.Tag) (Type, error)
 
+// getHardcodedTypes returns a map of fully-qualified type paths to their custom parsers.
+// A parser returning (nil, nil) signals fallthrough to default parsing.
+// Uses sync.OnceValue to avoid initialization cycle with parseSQLGenericNull → parseType → resolveHardcodedType.
 // hardcodedTypes maps fully-qualified type paths (e.g. "time.Time") to their custom parsers.
 // A parser returning (nil, nil) signals fallthrough to default parsing.
+// sql.Null[T] (generic) is handled separately in resolveHardcodedType to avoid an init cycle.
 var hardcodedTypes = map[string]hardcodedTypeParser{
 	"time.Time":                parseTimeType,
-	"database/sql.NullString":  makeSQLNullParser("String", "string"),
-	"database/sql.NullInt64":   makeSQLNullParser("Int64", "int64"),
-	"database/sql.NullInt32":   makeSQLNullParser("Int32", "int32"),
-	"database/sql.NullInt16":   makeSQLNullParser("Int16", "int16"),
-	"database/sql.NullByte":    makeSQLNullParser("Byte", "byte"),
-	"database/sql.NullBool":    makeSQLNullParser("Bool", "bool"),
-	"database/sql.NullFloat64": makeSQLNullParser("Float64", "float64"),
-	"database/sql.NullTime":    makeSQLNullParser("Time", "time.Time"),
-	"database/sql.Null":        parseSQLGenericNull,
+	"database/sql.NullString":  makeSQLNullParser(identFieldString, (*pkgParser).parseStringType),
+	"database/sql.NullInt64":   makeSQLNullParser(identFieldInt64, parseIntWithDefault(i64)),
+	"database/sql.NullInt32":   makeSQLNullParser(identFieldInt32, parseIntWithDefault(i32)),
+	"database/sql.NullInt16":   makeSQLNullParser(identFieldInt16, parseIntWithDefault(i16)),
+	"database/sql.NullByte":    makeSQLNullParser(identFieldByte, parseIntWithDefault(u8)),
+	"database/sql.NullBool":    makeSQLNullParser(identFieldBool, parseBoolValue),
+	"database/sql.NullFloat64": makeSQLNullParser(identFieldFloat64, parseFloat64Value),
+	"database/sql.NullTime":    makeSQLNullParser(identFieldTime, parseTimeValue),
 }
 
-func parseTimeType(_ ast.Expr, _ types.Type, tag *structtag.Tag) (Type, error) {
+func parseTimeType(_ *pkgParser, _ ast.Expr, _ types.Type, tag *structtag.Tag) (Type, error) {
 	if len(tag.Options) != 0 {
 		return nil, fmt.Errorf("unsupported tag options for time.Time: %v", tag.Options)
 	}
@@ -681,11 +684,16 @@ func parseTimeType(_ ast.Expr, _ types.Type, tag *structtag.Tag) (Type, error) {
 	}
 }
 
+// valueParser is a type parser function for sql.Null* value fields.
+type valueParser func(pp *pkgParser, expr ast.Expr, tag *structtag.Tag) (Type, error)
+
 // makeSQLNullParser creates a hardcoded parser for a concrete sql.NullXXX type.
-// valueField is the name of the value field (e.g. "String", "Int64").
-// valueTypeName is the Go type name used for parsing (e.g. "string", "int64").
-func makeSQLNullParser(valueField, valueTypeName string) hardcodedTypeParser {
-	return func(_ ast.Expr, _ types.Type, tag *structtag.Tag) (Type, error) {
+// valueField is the ident of the value field (e.g. ast.NewIdent("String")).
+// parseValue parses the inner value type.
+func makeSQLNullParser(valueField *ast.Ident, parseValue valueParser) hardcodedTypeParser {
+	typeExpr := ast.NewIdent(strings.ToLower(valueField.Name))
+
+	return func(pp *pkgParser, _ ast.Expr, _ types.Type, tag *structtag.Tag) (Type, error) {
 		if tag.Name != optional {
 			return nil, nil // fall through to struct parsing
 		}
@@ -696,86 +704,20 @@ func makeSQLNullParser(valueField, valueTypeName string) hardcodedTypeParser {
 			innerTag.Options = tag.Options[1:]
 		}
 
-		innerType, err := parseSQLNullValueType(valueTypeName, innerTag)
+		innerType, err := parseValue(pp, typeExpr, innerTag)
 		if err != nil {
 			return nil, err
 		}
 
 		return OptionalNull{
 			Type:       innerType,
-			ValueField: ast.NewIdent(valueField),
+			ValueField: valueField,
 		}, nil
 	}
 }
 
-// parseSQLNullValueType parses the inner value type of a sql.Null* using the same
-// logic as the main parser would for a basic type or hardcoded type.
-func parseSQLNullValueType(typeName string, tag *structtag.Tag) (Type, error) {
-	switch typeName {
-	case "string":
-		lenType, err := staticParseInt(identInt, tag.Name, u32)
-		if err != nil {
-			return nil, err
-		}
-
-		return StringOrBytes{TypeExpr: ast.NewIdent("string"), LenType: lenType}, nil
-	case "bool":
-		boolOpts := make([]string, len(tag.Options)+1)
-		boolOpts[0] = tag.Name
-		copy(boolOpts[1:], tag.Options)
-
-		return parseBool(boolOpts...)
-	case "byte":
-		return staticParseInt(identByte, u8, u8)
-	case "float64":
-		return Float{TypeExpr: ast.NewIdent("float64"), Size: 8}, nil
-	case "time.Time":
-		return parseTimeType(nil, nil, tag)
-	default:
-		// int16, int32, int64
-		dflTag, ok := defaultTagForTypeName[typeName]
-		if !ok {
-			return nil, fmt.Errorf("unsupported sql.Null value type: %s", typeName)
-		}
-
-		return staticParseInt(ast.NewIdent(typeName), tag.Name, dflTag)
-	}
-}
-
-var defaultTagForTypeName = map[string]string{
-	"int16": "i16",
-	"int32": "i32",
-	"int64": i64,
-}
-
-// staticParseInt parses an integer tag without needing a pkgParser.
-// typeExpr is the Go type expression for the value (e.g. identInt64 for int64).
-func staticParseInt(typeExpr ast.Expr, tagName, dflTag string) (Integer, error) {
-	if tagName == "" {
-		tagName = dflTag
-	}
-
-	params, ok := intTags[tagName]
-	if !ok {
-		return Integer{}, fmt.Errorf("unknown tag %s", tagName)
-	}
-
-	dflParams, ok := intTags[dflTag]
-	if ok && params.size >= dflParams.size {
-		params.min = 0
-		params.max = 0
-	}
-
-	return Integer{
-		TypeExpr: typeExpr,
-		Size:     params.size,
-		Min:      params.min,
-		Max:      params.max,
-	}, nil
-}
-
-// parseSQLGenericNull handles sql.Null[T] (the generic variant).
-func parseSQLGenericNull(_ ast.Expr, goType types.Type, tag *structtag.Tag) (Type, error) {
+// parseSQLGenericNull handles sql.Null[T] for any type T supported by iprotogen.
+func (pp *pkgParser) parseSQLGenericNull(expr ast.Expr, goType types.Type, tag *structtag.Tag) (Type, error) {
 	if tag.Name != optional {
 		return nil, nil // fall through to struct parsing
 	}
@@ -790,12 +732,12 @@ func parseSQLGenericNull(_ ast.Expr, goType types.Type, tag *structtag.Tag) (Typ
 		return nil, errors.New("sql.Null: expected exactly one type argument")
 	}
 
-	elemType := typeArgs.At(0)
+	elemGoType := typeArgs.At(0)
 
-	// resolve the element type name for parseSQLNullValueType
-	elemTypeName := types.TypeString(elemType, func(pkg *types.Package) string {
-		return pkg.Name()
-	})
+	elemExpr, err := pp.file.TypeToExpr(elemGoType, expr.Pos())
+	if err != nil {
+		return nil, err
+	}
 
 	innerTag := &structtag.Tag{Key: tag.Key}
 	if len(tag.Options) != 0 {
@@ -803,14 +745,14 @@ func parseSQLGenericNull(_ ast.Expr, goType types.Type, tag *structtag.Tag) (Typ
 		innerTag.Options = tag.Options[1:]
 	}
 
-	innerType, err := parseSQLNullValueType(elemTypeName, innerTag)
+	innerType, err := pp.parseType(elemExpr, elemGoType, innerTag, false)
 	if err != nil {
 		return nil, err
 	}
 
 	return OptionalNull{
 		Type:       innerType,
-		ValueField: ast.NewIdent("V"),
+		ValueField: identV,
 	}, nil
 }
 
@@ -834,12 +776,20 @@ func resolveHardcodedType(goType types.Type) hardcodedTypeParser {
 		return p
 	}
 
+	// sql.Null[T] (generic) is handled separately to avoid an init cycle:
+	// parseSQLGenericNull → parseType → resolveHardcodedType → hardcodedTypes.
+	if key == "database/sql.Null" {
+		return func(pp *pkgParser, expr ast.Expr, goType types.Type, tag *structtag.Tag) (Type, error) {
+			return pp.parseSQLGenericNull(expr, goType, tag)
+		}
+	}
+
 	return nil
 }
 
 func (pp *pkgParser) parseType(expr ast.Expr, goType types.Type, tag *structtag.Tag, needStructLit bool) (Type, error) {
 	if p := resolveHardcodedType(goType); p != nil {
-		typ, err := p(expr, goType, tag)
+		typ, err := p(pp, expr, goType, tag)
 		if typ != nil || err != nil {
 			return typ, err
 		}
@@ -889,10 +839,6 @@ func (pp *pkgParser) parseType(expr ast.Expr, goType types.Type, tag *structtag.
 	case *types.Map:
 		ret, err = pp.parseMap(expr, goType, tag)
 	case *types.Struct:
-		if err := rejectTag(expr, tag); err != nil {
-			return nil, err
-		}
-
 		ret, err = pp.parseStruct(expr, goType, needStructLit)
 	case *types.Pointer:
 		ret, err = pp.parsePointer(expr, goType, tag)
@@ -924,35 +870,40 @@ type intParams struct {
 	max  uint64
 }
 
-// most common used type tags
 const (
 	u8       = "u8"
+	u16      = "u16"
 	u32      = "u32"
+	u64      = "u64"
+	i8       = "i8"
+	i16      = "i16"
+	i32      = "i32"
 	i64      = "i64"
+	ber      = "ber"
 	optional = "optional"
 )
 
 var intTags = map[string]intParams{
-	u8:    {size: 1, max: 255},
-	"u16": {size: 2, max: 65535},
-	u32:   {size: 4, max: 0xFFFFFFFF},
-	"u64": {size: 8},
-	"i8":  {size: 1, min: -128, max: 127},
-	"i16": {size: 2, min: -32768, max: 32767},
-	"i32": {size: 4, min: -0x80000000, max: 0x7FFFFFFF},
-	i64:   {size: 8},
-	"ber": {size: 0},
+	u8:  {size: 1, max: 255},
+	u16: {size: 2, max: 65535},
+	u32: {size: 4, max: 0xFFFFFFFF},
+	u64: {size: 8},
+	i8:  {size: 1, min: -128, max: 127},
+	i16: {size: 2, min: -32768, max: 32767},
+	i32: {size: 4, min: -0x80000000, max: 0x7FFFFFFF},
+	i64: {size: 8},
+	ber: {size: 0},
 }
 
 var intDefaultTag = map[types.BasicKind]string{
-	types.Int8:   "i8",
-	types.Int16:  "i16",
-	types.Int32:  "i32",
+	types.Int8:   i8,
+	types.Int16:  i16,
+	types.Int32:  i32,
 	types.Int64:  i64,
 	types.Uint8:  u8,
-	types.Uint16: "u16",
+	types.Uint16: u16,
 	types.Uint32: u32,
-	types.Uint64: "u64",
+	types.Uint64: u64,
 	types.Int:    "", // no default tag
 	types.Uint:   "", //
 }
@@ -995,6 +946,67 @@ func (pp *pkgParser) parseInt(expr, warnLenExpr ast.Expr, intTag, dflTag string)
 	}, nil
 }
 
+// Extracted type parsers used by both parseBasic and makeSQLNullParser.
+
+func (pp *pkgParser) parseStringType(expr ast.Expr, tag *structtag.Tag) (Type, error) {
+	lenType, err := pp.parseInt(identInt, expr, tag.Name, u32)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(tag.Options) != 0 {
+		return nil, fmt.Errorf("%v: unsupported tag options for string: %v", expr, tag.Options)
+	}
+
+	return StringOrBytes{TypeExpr: expr, LenType: lenType}, nil
+}
+
+func parseBoolValue(_ *pkgParser, _ ast.Expr, tag *structtag.Tag) (Type, error) {
+	boolOpts := make([]string, len(tag.Options)+1)
+	boolOpts[0] = tag.Name
+	copy(boolOpts[1:], tag.Options)
+
+	return parseBool(boolOpts...)
+}
+
+func parseFloat32Value(_ *pkgParser, expr ast.Expr, tag *structtag.Tag) (Type, error) {
+	if tag.Name != "" {
+		return nil, fmt.Errorf("%v: unsupported tag for float32: %s", expr, tag.Name)
+	}
+
+	if len(tag.Options) != 0 {
+		return nil, fmt.Errorf("%v: unsupported tag options for float32: %v", expr, tag.Options)
+	}
+
+	return Float{TypeExpr: expr, Size: 4}, nil
+}
+
+func parseFloat64Value(_ *pkgParser, expr ast.Expr, tag *structtag.Tag) (Type, error) {
+	if tag.Name != "" {
+		return nil, fmt.Errorf("%v: unsupported tag for float64: %s", expr, tag.Name)
+	}
+
+	if len(tag.Options) != 0 {
+		return nil, fmt.Errorf("%v: unsupported tag options for float64: %v", expr, tag.Options)
+	}
+
+	return Float{TypeExpr: expr, Size: 8}, nil
+}
+
+func parseIntWithDefault(dflTag string) valueParser {
+	return func(pp *pkgParser, expr ast.Expr, tag *structtag.Tag) (Type, error) {
+		if len(tag.Options) != 0 {
+			return nil, fmt.Errorf("%v: unsupported tag options: %v", expr, tag.Options)
+		}
+
+		return pp.parseInt(expr, nil, tag.Name, dflTag)
+	}
+}
+
+func parseTimeValue(_ *pkgParser, _ ast.Expr, tag *structtag.Tag) (Type, error) {
+	return parseTimeType(nil, nil, nil, tag)
+}
+
 func (pp *pkgParser) parseBasic(expr ast.Expr, basic *types.Basic, tag *structtag.Tag) (Type, error) {
 	kind := basic.Kind()
 
@@ -1008,42 +1020,13 @@ func (pp *pkgParser) parseBasic(expr ast.Expr, basic *types.Basic, tag *structta
 
 	switch kind {
 	case types.Bool:
-		boolOpts := make([]string, len(tag.Options)+1)
-		boolOpts[0] = tag.Name
-		copy(boolOpts[1:], tag.Options)
-
-		return parseBool(boolOpts...)
+		return parseBoolValue(nil, expr, tag)
 	case types.Float32:
-		if tag.Name != "" {
-			return nil, fmt.Errorf("%v: unsupported tag for float32: %s", expr, tag.Name)
-		}
-
-		if len(tag.Options) != 0 {
-			return nil, fmt.Errorf("%v: unsupported tag options for float32: %v", expr, tag.Options)
-		}
-
-		return Float{TypeExpr: expr, Size: 4}, nil
+		return parseFloat32Value(nil, expr, tag)
 	case types.Float64:
-		if tag.Name != "" {
-			return nil, fmt.Errorf("%v: unsupported tag for float64: %s", expr, tag.Name)
-		}
-
-		if len(tag.Options) != 0 {
-			return nil, fmt.Errorf("%v: unsupported tag options for float64: %v", expr, tag.Options)
-		}
-
-		return Float{TypeExpr: expr, Size: 8}, nil
+		return parseFloat64Value(nil, expr, tag)
 	case types.String:
-		lenType, err := pp.parseInt(identInt, expr, tag.Name, u32)
-		if err != nil {
-			return nil, err
-		}
-
-		if len(tag.Options) != 0 {
-			return nil, fmt.Errorf("%v: unsupported tag options for string: %v", expr, tag.Options)
-		}
-
-		return StringOrBytes{TypeExpr: expr, LenType: lenType}, nil
+		return pp.parseStringType(expr, tag)
 	default:
 		return nil, fmt.Errorf("unsupported basic type kind: %d", basic.Kind())
 	}
@@ -1337,7 +1320,7 @@ func (pp *pkgParser) parsePointer(expr ast.Expr, ptr *types.Pointer, tag *struct
 	}
 
 	if isOptional {
-		return Optional{
+		return OptionalPointer{
 			Type:     elemType,
 			TypeExpr: elemGoTypeExpr,
 		}, nil

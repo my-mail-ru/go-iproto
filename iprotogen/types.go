@@ -545,15 +545,15 @@ func (TimeUnixU32) EmitUnmarshaler(x ast.Expr, block []ast.Stmt) []ast.Stmt {
 	return emitVarAssign(x, exprCall(exprTimeUnix, exprCall(identInt64, secVar), lit0), block)
 }
 
-// Optional wraps a pointer type with a presence byte.
+// OptionalPointer wraps a pointer type with a presence byte.
 // Marshal: if pointer is nil, writes 0; otherwise writes 1 followed by the value.
 // Unmarshal: reads presence byte; if 0, sets nil; if 1, allocates and reads value.
-type Optional struct {
+type OptionalPointer struct {
 	Type     Type     // inner type (what the pointer points to)
 	TypeExpr ast.Expr // the type being pointed to
 }
 
-func (o Optional) EmitMarshaler(x ast.Expr, block []ast.Stmt) []ast.Stmt {
+func (o OptionalPointer) EmitMarshaler(x ast.Expr, block []ast.Stmt) []ast.Stmt {
 	valBody := o.Type.EmitMarshaler(&ast.ParenExpr{
 		X: &ast.StarExpr{X: x},
 	}, emitAppendBuf([]ast.Expr{identBuf, lit1}, token.NoPos, nil))
@@ -577,7 +577,7 @@ func (o Optional) EmitMarshaler(x ast.Expr, block []ast.Stmt) []ast.Stmt {
 	})
 }
 
-func (o Optional) EmitUnmarshaler(x ast.Expr, block []ast.Stmt) []ast.Stmt {
+func (o OptionalPointer) EmitUnmarshaler(x ast.Expr, block []ast.Stmt) []ast.Stmt {
 	block = emitBoundCheck(exprLenBuf, token.LSS, lit1, false, astToSourceUpper(x), block)
 
 	valBody := emitVarAssign(x, exprCall(identNew, o.TypeExpr), newBlock())
