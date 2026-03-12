@@ -860,6 +860,12 @@ func (pp *pkgParser) parseType(expr ast.Expr, goType types.Type, tag *structtag.
 		}, nil
 	}
 
+	if tag.Name == optional {
+		if _, isPtr := goType.(*types.Pointer); !isPtr {
+			return nil, fmt.Errorf("%s: \"optional\" tag is only supported for pointer and sql.Null* types", astToSource(expr))
+		}
+	}
+
 	var (
 		ret Type
 		err error

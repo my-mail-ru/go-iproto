@@ -106,6 +106,7 @@ type MyStruct struct {
 	OptionalNullInt16    sql.NullInt16   `iproto:"optional"`
 	OptionalNullByte     sql.NullByte    `iproto:"optional"`
 	OptionalNullTime     sql.NullTime    `iproto:"optional"`
+	OptionalNullTimeU32  sql.NullTime    `iproto:"optional,u32"`
 	OptionalNullGeneric  sql.Null[int64] `iproto:"optional"`
 	// Backwards compatibility: non-optional pointer (existing behavior)
 	// IntPtr and StructPtr already test this above

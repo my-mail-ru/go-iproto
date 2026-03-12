@@ -145,7 +145,8 @@ func TestMyStructMarshalUnmarshal(t *testing.T) {
 		OptionalNullInt32:    sql.NullInt32{Int32: -42, Valid: true},
 		OptionalNullInt16:    sql.NullInt16{Int16: 1234, Valid: true},
 		OptionalNullByte:     sql.NullByte{Byte: 0xAB, Valid: true},
-		OptionalNullTime:     sql.NullTime{Time: time.Unix(1733506469, 0), Valid: true},
+		OptionalNullTime:     sql.NullTime{Time: time.Unix(1733506469, 123456789), Valid: true},
+		OptionalNullTimeU32:  sql.NullTime{Time: time.Unix(1733506469, 0), Valid: true},
 		OptionalNullGeneric:  sql.Null[int64]{V: 999, Valid: true},
 		// Backwards compatibility: non-optional sql.Null (serialized as plain struct)
 		NonOptionalNull: sql.NullString{String: "compat", Valid: true},

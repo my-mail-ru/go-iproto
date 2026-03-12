@@ -447,6 +447,13 @@ func (recvMyStruct MyStruct) MarshalIProto(buf []byte) ([]byte, error) {
 	} else {
 		buf = append(buf, 0)
 	}
+	if recvMyStruct.OptionalNullTimeU32.Valid {
+		buf = append(buf, 1)
+		secRecvMyStruct_OptionalNullTimeU32_Time := uint32(recvMyStruct.OptionalNullTimeU32.Time.Unix())
+		buf = append(buf, byte(secRecvMyStruct_OptionalNullTimeU32_Time), byte(secRecvMyStruct_OptionalNullTimeU32_Time>>8), byte(secRecvMyStruct_OptionalNullTimeU32_Time>>16), byte(secRecvMyStruct_OptionalNullTimeU32_Time>>24))
+	} else {
+		buf = append(buf, 0)
+	}
 	if recvMyStruct.OptionalNullGeneric.Valid {
 		buf = append(buf, 1)
 		buf = append(buf, byte(recvMyStruct.OptionalNullGeneric.V), byte(recvMyStruct.OptionalNullGeneric.V>>8), byte(recvMyStruct.OptionalNullGeneric.V>>16), byte(recvMyStruct.OptionalNullGeneric.V>>24), byte(recvMyStruct.OptionalNullGeneric.V>>32), byte(recvMyStruct.OptionalNullGeneric.V>>40), byte(recvMyStruct.OptionalNullGeneric.V>>48), byte(recvMyStruct.OptionalNullGeneric.V>>56))
@@ -1647,6 +1654,22 @@ func (recv_MyStruct *MyStruct) UnmarshalIProto(buf []byte) ([]byte, error) {
 		recv_MyStruct.OptionalNullTime.Time = time.Unix(0, nanoRecv_MyStruct_OptionalNullTime_Time)
 	} else {
 		recv_MyStruct.OptionalNullTime.Valid = false
+		buf = buf[1:]
+	}
+	if len(buf) < 1 {
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.OptionalNullTimeU32: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+	}
+	if buf[0] != 0 {
+		buf = buf[1:]
+		recv_MyStruct.OptionalNullTimeU32.Valid = true
+		if len(buf) < 4 {
+			return nil, fmt.Errorf("UnmarshalIProto: SecRecv_MyStruct_OptionalNullTimeU32_Time: %w: %d < %d", iproto.ErrOverflow, len(buf), 4)
+		}
+		secRecv_MyStruct_OptionalNullTimeU32_Time := binary.LittleEndian.Uint32(buf)
+		buf = buf[4:]
+		recv_MyStruct.OptionalNullTimeU32.Time = time.Unix(int64(secRecv_MyStruct_OptionalNullTimeU32_Time), 0)
+	} else {
+		recv_MyStruct.OptionalNullTimeU32.Valid = false
 		buf = buf[1:]
 	}
 	if len(buf) < 1 {
