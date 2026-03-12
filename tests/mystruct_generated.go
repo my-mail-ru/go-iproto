@@ -133,6 +133,16 @@ func (recvMyStruct MyStruct) MarshalIProto(buf []byte) ([]byte, error) {
 	} else {
 		buf = append(buf, 102)
 	}
+	if recvMyStruct.DefBoolT {
+		buf = append(buf, 1)
+	} else {
+		buf = append(buf, 0)
+	}
+	if recvMyStruct.DefBoolF {
+		buf = append(buf, 1)
+	} else {
+		buf = append(buf, 0)
+	}
 	for _, elemRecvMyStruct_IntArray := range recvMyStruct.IntArray {
 		if elemRecvMyStruct_IntArray < -2147483648 {
 			return nil, fmt.Errorf("MarshalIProto: ElemRecvMyStruct_IntArray: %w: %d < %d", iproto.ErrOverflow, elemRecvMyStruct_IntArray, -2147483648)
@@ -741,6 +751,16 @@ func (recv_MyStruct *MyStruct) UnmarshalIProto(buf []byte) ([]byte, error) {
 		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.CustomCharBoolF: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
 	}
 	recv_MyStruct.CustomCharBoolF = buf[0] != 102
+	buf = buf[1:]
+	if len(buf) < 1 {
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.DefBoolT: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+	}
+	recv_MyStruct.DefBoolT = iprototypes.Bool(buf[0] != 0)
+	buf = buf[1:]
+	if len(buf) < 1 {
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.DefBoolF: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+	}
+	recv_MyStruct.DefBoolF = iprototypes.Bool(buf[0] != 0)
 	buf = buf[1:]
 	if len(buf) < 4 {
 		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.IntArray: %w: %d < %d", iproto.ErrOverflow, len(buf), 4)

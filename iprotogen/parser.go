@@ -956,12 +956,12 @@ func (pp *pkgParser) parseStringType(expr ast.Expr, tag *structtag.Tag) (Type, e
 	return StringOrBytes{TypeExpr: expr, LenType: lenType}, nil
 }
 
-func parseBoolValue(_ *pkgParser, _ ast.Expr, tag *structtag.Tag) (Type, error) {
+func parseBoolValue(_ *pkgParser, expr ast.Expr, tag *structtag.Tag) (Type, error) {
 	boolOpts := make([]string, len(tag.Options)+1)
 	boolOpts[0] = tag.Name
 	copy(boolOpts[1:], tag.Options)
 
-	return parseBool(boolOpts...)
+	return parseBool(expr, boolOpts...)
 }
 
 func parseFloat32Value(_ *pkgParser, expr ast.Expr, tag *structtag.Tag) (Type, error) {
@@ -1027,7 +1027,7 @@ func (pp *pkgParser) parseBasic(expr ast.Expr, basic *types.Basic, tag *structta
 	}
 }
 
-func parseBool(opts ...string) (Bool, error) {
+func parseBool(typeExpr ast.Expr, opts ...string) (Bool, error) {
 	valTrue := 1
 	valFalse := 0
 
@@ -1081,8 +1081,9 @@ func parseBool(opts ...string) (Bool, error) {
 	}
 
 	return Bool{
-		True:  litInt(valTrue),
-		False: litInt(valFalse),
+		TypeExpr: typeExpr,
+		True:     litInt(valTrue),
+		False:    litInt(valFalse),
 	}, nil
 }
 

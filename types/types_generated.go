@@ -26,6 +26,22 @@ func (recv_BER *BER) UnmarshalIProto(buf []byte) ([]byte, error) {
 	*recv_BER = BER(u64)
 	return buf, nil
 }
+func (recvBool Bool) MarshalIProto(buf []byte) ([]byte, error) {
+	if recvBool {
+		buf = append(buf, 1)
+	} else {
+		buf = append(buf, 0)
+	}
+	return buf, nil
+}
+func (recv_Bool *Bool) UnmarshalIProto(buf []byte) ([]byte, error) {
+	if len(buf) < 1 {
+		return nil, fmt.Errorf("UnmarshalIProto: *recv_Bool: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+	}
+	*recv_Bool = Bool(buf[0] != 0)
+	buf = buf[1:]
+	return buf, nil
+}
 func (recvBytes Bytes) MarshalIProto(buf []byte) ([]byte, error) {
 	buf = iproto.EncodeBER(buf, uint64(len(recvBytes)))
 	buf = append(buf, recvBytes...)

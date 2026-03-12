@@ -71,6 +71,8 @@ type MyStruct struct {
 	CustomBoolF           bool                           `iproto:"true: 49, false: 48"`
 	CustomCharBoolT       bool                           `iproto:"true: 't', false: 'f'"`
 	CustomCharBoolF       bool                           `iproto:"true: 't', false: 'f'"`
+	DefBoolT              iprototypes.Bool               //
+	DefBoolF              iprototypes.Bool               //
 	IntArray              [4]int                         `iproto:"i32"`
 	UUID                  UUID                           //
 	MapStringString       map[string]string              //

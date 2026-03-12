@@ -55,6 +55,8 @@ func TestMyStructMarshalUnmarshal(t *testing.T) {
 		CustomBoolF:           false,
 		CustomCharBoolT:       true,
 		CustomCharBoolF:       false,
+		DefBoolT:              true,
+		DefBoolF:              false,
 		IntArray:              [4]int{1, -2, 3, -4},
 		UUID:                  [16]byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
 		MapStringString:       map[string]string{"test": "12345", "foobar": "baz"},
