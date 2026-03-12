@@ -96,18 +96,19 @@ type MyStruct struct {
 	OptionalStruct    *Ints   `iproto:"optional"`
 	OptionalStructNil *Ints   `iproto:"optional"`
 	// Optional sql.Null types
-	OptionalNullStr      sql.NullString  `iproto:"optional,ber"`
-	OptionalNullStrEmpty sql.NullString  `iproto:"optional,ber"`
-	OptionalNullInt64    sql.NullInt64   `iproto:"optional"`
-	OptionalNullInt64Nil sql.NullInt64   `iproto:"optional"`
-	OptionalNullBool     sql.NullBool    `iproto:"optional"`
-	OptionalNullFloat64  sql.NullFloat64 `iproto:"optional"`
-	OptionalNullInt32    sql.NullInt32   `iproto:"optional"`
-	OptionalNullInt16    sql.NullInt16   `iproto:"optional"`
-	OptionalNullByte     sql.NullByte    `iproto:"optional"`
-	OptionalNullTime     sql.NullTime    `iproto:"optional"`
-	OptionalNullTimeU32  sql.NullTime    `iproto:"optional,u32"`
-	OptionalNullGeneric  sql.Null[int64] `iproto:"optional"`
+	OptionalNullStr      sql.NullString    `iproto:"optional,ber"`
+	OptionalNullStrEmpty sql.NullString    `iproto:"optional,ber"`
+	OptionalNullInt64    sql.NullInt64     `iproto:"optional"`
+	OptionalNullInt64Nil sql.NullInt64     `iproto:"optional"`
+	OptionalNullBool     sql.NullBool      `iproto:"optional"`
+	OptionalNullFloat64  sql.NullFloat64   `iproto:"optional"`
+	OptionalNullInt32    sql.NullInt32     `iproto:"optional"`
+	OptionalNullInt16    sql.NullInt16     `iproto:"optional"`
+	OptionalNullByte     sql.NullByte      `iproto:"optional"`
+	OptionalNullTime     sql.NullTime      `iproto:"optional"`
+	OptionalNullTimeU32  sql.NullTime      `iproto:"optional,u32"`
+	OptionalNullGeneric  sql.Null[int64]   `iproto:"optional"`
+	OptionalNullFloat32  sql.Null[float32] `iproto:"optional"`
 	// Backwards compatibility: non-optional pointer (existing behavior)
 	// IntPtr and StructPtr already test this above
 	// Backwards compatibility: sql.Null without optional tag (parsed as struct)

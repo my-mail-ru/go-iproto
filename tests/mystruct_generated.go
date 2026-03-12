@@ -460,6 +460,13 @@ func (recvMyStruct MyStruct) MarshalIProto(buf []byte) ([]byte, error) {
 	} else {
 		buf = append(buf, 0)
 	}
+	if recvMyStruct.OptionalNullFloat32.Valid {
+		buf = append(buf, 1)
+		bitsRecvMyStruct_OptionalNullFloat32_V := math.Float32bits(recvMyStruct.OptionalNullFloat32.V)
+		buf = append(buf, byte(bitsRecvMyStruct_OptionalNullFloat32_V), byte(bitsRecvMyStruct_OptionalNullFloat32_V>>8), byte(bitsRecvMyStruct_OptionalNullFloat32_V>>16), byte(bitsRecvMyStruct_OptionalNullFloat32_V>>24))
+	} else {
+		buf = append(buf, 0)
+	}
 	buf = append(buf, byte(len(recvMyStruct.NonOptionalNull.String)), byte(len(recvMyStruct.NonOptionalNull.String)>>8), byte(len(recvMyStruct.NonOptionalNull.String)>>16), byte(len(recvMyStruct.NonOptionalNull.String)>>24))
 	buf = append(buf, recvMyStruct.NonOptionalNull.String...)
 	if recvMyStruct.NonOptionalNull.Valid {
@@ -1685,6 +1692,22 @@ func (recv_MyStruct *MyStruct) UnmarshalIProto(buf []byte) ([]byte, error) {
 		buf = buf[8:]
 	} else {
 		recv_MyStruct.OptionalNullGeneric.Valid = false
+		buf = buf[1:]
+	}
+	if len(buf) < 1 {
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.OptionalNullFloat32: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+	}
+	if buf[0] != 0 {
+		buf = buf[1:]
+		recv_MyStruct.OptionalNullFloat32.Valid = true
+		if len(buf) < 4 {
+			return nil, fmt.Errorf("UnmarshalIProto: BitsRecv_MyStruct_OptionalNullFloat32_V: %w: %d < %d", iproto.ErrOverflow, len(buf), 4)
+		}
+		bitsRecv_MyStruct_OptionalNullFloat32_V := binary.LittleEndian.Uint32(buf)
+		buf = buf[4:]
+		recv_MyStruct.OptionalNullFloat32.V = math.Float32frombits(bitsRecv_MyStruct_OptionalNullFloat32_V)
+	} else {
+		recv_MyStruct.OptionalNullFloat32.Valid = false
 		buf = buf[1:]
 	}
 	if len(buf) < 4 {
