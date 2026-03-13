@@ -834,7 +834,12 @@ func (pp *pkgParser) parseType(expr ast.Expr, goType types.Type, tag *structtag.
 	case *types.Map:
 		ret, err = pp.parseMap(expr, goType, tag)
 	case *types.Struct:
-		ret, err = pp.parseStruct(expr, goType, needStructLit)
+		promotion, promErr := resolveTagPromotion(marshalerRecvType, tag)
+		if promErr != nil {
+			return nil, fmt.Errorf("%s: %w", astToSource(expr), promErr)
+		}
+
+		ret, err = pp.parseStruct(expr, goType, needStructLit, promotion)
 	case *types.Pointer:
 		ret, err = pp.parsePointer(expr, goType, tag)
 
@@ -857,6 +862,63 @@ func rejectTag(expr ast.Expr, tag *structtag.Tag) error {
 	}
 
 	return nil
+}
+
+// tagPromotion specifies a tag to promote to a specific struct field.
+// This is used for generic structs where the outer tag applies to the field
+// whose type comes from a type parameter (e.g. Event[string] `iproto:"u16"`
+// promotes "u16" to the Data field of type T).
+type tagPromotion struct {
+	fieldIndex int
+	tag        *structtag.Tag
+}
+
+// resolveTagPromotion checks whether a tag on a struct type can be promoted
+// to a field that uses a type parameter. Returns nil if the tag is empty.
+// Returns an error if the tag is non-empty but promotion is not possible
+// (non-generic struct or no type-parameter fields).
+func resolveTagPromotion(namedType types.Type, tag *structtag.Tag) (*tagPromotion, error) {
+	if tag.Name == "" && len(tag.Options) == 0 {
+		return nil, nil
+	}
+
+	named, ok := types.Unalias(namedType).(*types.Named)
+	if !ok {
+		return nil, errors.New("tags are not supported for non-named struct types")
+	}
+
+	typeArgs := named.TypeArgs()
+	if typeArgs == nil || typeArgs.Len() == 0 {
+		return nil, errors.New("tags are not supported for non-generic struct types")
+	}
+
+	origin := named.Origin()
+
+	originSt, ok := origin.Underlying().(*types.Struct)
+	if !ok {
+		return nil, errors.New("tags are not supported for this type")
+	}
+
+	fieldIdx := -1
+
+	for i := range originSt.NumFields() {
+		if _, isTP := originSt.Field(i).Type().(*types.TypeParam); isTP {
+			if fieldIdx >= 0 {
+				return nil, errors.New("tag promotion is ambiguous: multiple fields use type parameters")
+			}
+
+			fieldIdx = i
+		}
+	}
+
+	if fieldIdx < 0 {
+		return nil, errors.New("tags are not supported: no fields use type parameters")
+	}
+
+	return &tagPromotion{
+		fieldIndex: fieldIdx,
+		tag:        tag,
+	}, nil
 }
 
 type intParams struct {
@@ -1227,7 +1289,7 @@ func (pp *pkgParser) parseMap(expr ast.Expr, mapType *types.Map, tag *structtag.
 	}, nil
 }
 
-func (pp *pkgParser) parseStruct(expr ast.Expr, st *types.Struct, needStructLit bool) (Type, error) {
+func (pp *pkgParser) parseStruct(expr ast.Expr, st *types.Struct, needStructLit bool, promotion *tagPromotion) (Type, error) {
 	numFields := st.NumFields()
 	fields := make([]StructField, 0, numFields)
 
@@ -1237,7 +1299,9 @@ func (pp *pkgParser) parseStruct(expr ast.Expr, st *types.Struct, needStructLit 
 
 		tag := (*structtag.Tag)(nil)
 
-		if allTags := st.Tag(i); allTags != "" {
+		if promotion != nil && i == promotion.fieldIndex {
+			tag = promotion.tag
+		} else if allTags := st.Tag(i); allTags != "" {
 			tags, err := structtag.Parse(allTags)
 			if err != nil {
 				return nil, newErrorWithPos(field, fmt.Errorf("field %s has invalid tag %s: %w", fieldName, allTags, err))
