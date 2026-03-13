@@ -161,6 +161,16 @@ func TestMyStructMarshalUnmarshal(t *testing.T) {
 		OptionalNullFloat32:  sql.Null[float32]{V: 2.5, Valid: true},
 		// Backwards compatibility: non-optional sql.Null (serialized as plain struct)
 		NonOptionalNull: sql.NullString{String: "compat", Valid: true},
+		// Tag promotion: partial tags
+		GenericPairPartial: Pair[string, int32]{
+			First:  "hi",
+			Second: 12345,
+		},
+		// Tag promotion: sql.Null[T] with tagWidth 0
+		GenericNullPair: Pair[sql.Null[string], int32]{
+			First:  sql.Null[string]{V: "test", Valid: true},
+			Second: 42,
+		},
 	}
 
 	bytes, err := orig.MarshalIProto(nil)

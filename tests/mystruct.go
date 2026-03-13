@@ -122,4 +122,8 @@ type MyStruct struct {
 	// IntPtr and StructPtr already test this above
 	// Backwards compatibility: sql.Null without optional tag (parsed as struct)
 	NonOptionalNull sql.NullString //
+	// Tag promotion: partial tags (fewer components than total width)
+	GenericPairPartial Pair[string, int32] `iproto:"u8"`
+	// Tag promotion: sql.Null[T] has tagWidth 0 (struct), tags go to other fields
+	GenericNullPair Pair[sql.Null[string], int32] `iproto:"i16"`
 }

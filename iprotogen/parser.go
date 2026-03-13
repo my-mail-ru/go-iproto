@@ -895,10 +895,6 @@ func usesTypeParam(t types.Type) bool {
 // tagWidth returns the number of tag components a type consumes when serialized.
 // This is used to split the outer tag among multiple type-parameter fields.
 func tagWidth(goType types.Type) int {
-	if resolveHardcodedType(goType) != nil {
-		return 1
-	}
-
 	switch t := goType.Underlying().(type) {
 	case *types.Basic:
 		return 1
@@ -960,12 +956,18 @@ func resolveTagPromotion(namedType types.Type, tag *structtag.Tag) (map[int]*str
 		width int
 	}
 
-	var promotable []promotableField
+	promotable := make([]promotableField, 0, originSt.NumFields())
+	totalWidth := 0
 
 	for i := range originSt.NumFields() {
 		if usesTypeParam(originSt.Field(i).Type()) {
 			w := tagWidth(st.Field(i).Type())
+			if w == 0 {
+				continue
+			}
+
 			promotable = append(promotable, promotableField{index: i, width: w})
+			totalWidth += w
 		}
 	}
 
@@ -978,29 +980,29 @@ func resolveTagPromotion(namedType types.Type, tag *structtag.Tag) (map[int]*str
 	components = append(components, tag.Name)
 	components = append(components, tag.Options...)
 
-	totalWidth := 0
-	for _, pf := range promotable {
-		totalWidth += pf.width
-	}
-
-	if len(components) != totalWidth {
-		return nil, fmt.Errorf("tag has %d component(s) but type parameter fields require %d", len(components), totalWidth)
+	if len(components) > totalWidth {
+		return nil, fmt.Errorf("tag has %d component(s) but type parameter fields accept at most %d", len(components), totalWidth)
 	}
 
 	promotions := make(map[int]*structtag.Tag, len(promotable))
 	pos := 0
 
 	for _, pf := range promotable {
-		t := &structtag.Tag{Key: tag.Key}
-		if pf.width > 0 {
-			t.Name = components[pos]
-			if pf.width > 1 {
-				t.Options = components[pos+1 : pos+pf.width]
-			}
-
-			pos += pf.width
+		if pos >= len(components) {
+			break
 		}
 
+		if pos+pf.width > len(components) {
+			return nil, fmt.Errorf("tag has %d remaining component(s) but next type parameter field requires %d",
+				len(components)-pos, pf.width)
+		}
+
+		t := &structtag.Tag{Key: tag.Key, Name: components[pos]}
+		if pf.width > 1 {
+			t.Options = components[pos+1 : pos+pf.width]
+		}
+
+		pos += pf.width
 		promotions[pf.index] = t
 	}
 
@@ -1379,17 +1381,7 @@ func (pp *pkgParser) parseMap(expr ast.Expr, mapType *types.Map, tag *structtag.
 // promoted tags from generic type instantiations. It warns if both promoted and
 // explicit tags exist for the same field.
 func (pp *pkgParser) resolveFieldTag(field *types.Var, fieldIndex int, st *types.Struct, promotions map[int]*structtag.Tag) (*structtag.Tag, error) {
-	if promTag, ok := promotions[fieldIndex]; ok {
-		if allTags := st.Tag(fieldIndex); allTags != "" {
-			if tags, err := structtag.Parse(allTags); err == nil {
-				if fieldTag, _ := tags.Get(IProtoTag); fieldTag != nil {
-					log.Printf("[WARN] %s: field %s: promoted tag overrides explicit field tag", pp.filenameLine(field), field.Name())
-				}
-			}
-		}
-
-		return promTag, nil
-	}
+	var fieldTag *structtag.Tag
 
 	if allTags := st.Tag(fieldIndex); allTags != "" {
 		tags, err := structtag.Parse(allTags)
@@ -1397,12 +1389,18 @@ func (pp *pkgParser) resolveFieldTag(field *types.Var, fieldIndex int, st *types
 			return nil, newErrorWithPos(field, fmt.Errorf("field %s has invalid tag %s: %w", field.Name(), allTags, err))
 		}
 
-		tag, _ := tags.Get(IProtoTag)
-
-		return tag, nil
+		fieldTag, _ = tags.Get(IProtoTag)
 	}
 
-	return nil, nil
+	if promTag, ok := promotions[fieldIndex]; ok {
+		if fieldTag != nil {
+			log.Printf("[WARN] %s: field %s: promoted tag overrides explicit field tag", pp.filenameLine(field), field.Name())
+		}
+
+		return promTag, nil
+	}
+
+	return fieldTag, nil
 }
 
 func (pp *pkgParser) parseStruct(expr ast.Expr, st *types.Struct, needStructLit bool, promotions map[int]*structtag.Tag) (Type, error) {

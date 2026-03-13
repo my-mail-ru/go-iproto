@@ -517,6 +517,26 @@ func (recvMyStruct MyStruct) MarshalIProto(buf []byte) ([]byte, error) {
 	} else {
 		buf = append(buf, 0)
 	}
+	if len(recvMyStruct.GenericPairPartial.First) > 255 {
+		return nil, fmt.Errorf("MarshalIProto: Len(recvMyStruct.GenericPairPartial.First): %w: %d > %d", iproto.ErrOverflow, len(recvMyStruct.GenericPairPartial.First), 255)
+	}
+	buf = append(buf, byte(len(recvMyStruct.GenericPairPartial.First)))
+	buf = append(buf, recvMyStruct.GenericPairPartial.First...)
+	buf = append(buf, byte(recvMyStruct.GenericPairPartial.Second), byte(recvMyStruct.GenericPairPartial.Second>>8), byte(recvMyStruct.GenericPairPartial.Second>>16), byte(recvMyStruct.GenericPairPartial.Second>>24))
+	buf = append(buf, byte(len(recvMyStruct.GenericNullPair.First.V)), byte(len(recvMyStruct.GenericNullPair.First.V)>>8), byte(len(recvMyStruct.GenericNullPair.First.V)>>16), byte(len(recvMyStruct.GenericNullPair.First.V)>>24))
+	buf = append(buf, recvMyStruct.GenericNullPair.First.V...)
+	if recvMyStruct.GenericNullPair.First.Valid {
+		buf = append(buf, 1)
+	} else {
+		buf = append(buf, 0)
+	}
+	if recvMyStruct.GenericNullPair.Second < -32768 {
+		return nil, fmt.Errorf("MarshalIProto: RecvMyStruct.GenericNullPair.Second: %w: %d < %d", iproto.ErrOverflow, recvMyStruct.GenericNullPair.Second, -32768)
+	}
+	if recvMyStruct.GenericNullPair.Second > 32767 {
+		return nil, fmt.Errorf("MarshalIProto: RecvMyStruct.GenericNullPair.Second: %w: %d > %d", iproto.ErrOverflow, recvMyStruct.GenericNullPair.Second, 32767)
+	}
+	buf = append(buf, byte(recvMyStruct.GenericNullPair.Second), byte(recvMyStruct.GenericNullPair.Second>>8))
 	return buf, nil
 }
 func (recv_MyStruct *MyStruct) UnmarshalIProto(buf []byte) ([]byte, error) {
@@ -1819,6 +1839,41 @@ func (recv_MyStruct *MyStruct) UnmarshalIProto(buf []byte) ([]byte, error) {
 	}
 	recv_MyStruct.NonOptionalNull.Valid = buf[0] != 0
 	buf = buf[1:]
+	if len(buf) < 1 {
+		return nil, fmt.Errorf("UnmarshalIProto: LenRecv_MyStruct_GenericPairPartial_First: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+	}
+	lenRecv_MyStruct_GenericPairPartial_First := int(buf[0])
+	buf = buf[1:]
+	if len(buf) < lenRecv_MyStruct_GenericPairPartial_First {
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.GenericPairPartial.First: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_GenericPairPartial_First)
+	}
+	recv_MyStruct.GenericPairPartial.First = string(buf[:lenRecv_MyStruct_GenericPairPartial_First])
+	buf = buf[lenRecv_MyStruct_GenericPairPartial_First:]
+	if len(buf) < 4 {
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.GenericPairPartial.Second: %w: %d < %d", iproto.ErrOverflow, len(buf), 4)
+	}
+	recv_MyStruct.GenericPairPartial.Second = int32(binary.LittleEndian.Uint32(buf))
+	buf = buf[4:]
+	if len(buf) < 4 {
+		return nil, fmt.Errorf("UnmarshalIProto: LenRecv_MyStruct_GenericNullPair_First_V: %w: %d < %d", iproto.ErrOverflow, len(buf), 4)
+	}
+	lenRecv_MyStruct_GenericNullPair_First_V := int(binary.LittleEndian.Uint32(buf))
+	buf = buf[4:]
+	if len(buf) < lenRecv_MyStruct_GenericNullPair_First_V {
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.GenericNullPair.First.V: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_GenericNullPair_First_V)
+	}
+	recv_MyStruct.GenericNullPair.First.V = string(buf[:lenRecv_MyStruct_GenericNullPair_First_V])
+	buf = buf[lenRecv_MyStruct_GenericNullPair_First_V:]
+	if len(buf) < 1 {
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.GenericNullPair.First.Valid: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+	}
+	recv_MyStruct.GenericNullPair.First.Valid = buf[0] != 0
+	buf = buf[1:]
+	if len(buf) < 2 {
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.GenericNullPair.Second: %w: %d < %d", iproto.ErrOverflow, len(buf), 2)
+	}
+	recv_MyStruct.GenericNullPair.Second = int32(int16(binary.LittleEndian.Uint16(buf)))
+	buf = buf[2:]
 	return buf, nil
 }
 func (recvUUID UUID) MarshalIProto(buf []byte) ([]byte, error) {
