@@ -166,10 +166,15 @@ func TestMyStructMarshalUnmarshal(t *testing.T) {
 			First:  "hi",
 			Second: 12345,
 		},
-		// Tag promotion: sql.Null[T] with tagWidth 0
+		// Tag promotion: sql.Null[T] with full tag
 		GenericNullPair: Pair[sql.Null[string], int32]{
 			First:  sql.Null[string]{V: "test", Valid: true},
 			Second: 42,
+		},
+		// Tag promotion: sql.Null[T] with partial fill
+		GenericNullEvent: Event[sql.Null[int64]]{
+			Data: sql.Null[int64]{V: 999, Valid: true},
+			Type: EventType("INT"),
 		},
 	}
 

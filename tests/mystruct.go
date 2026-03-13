@@ -124,6 +124,8 @@ type MyStruct struct {
 	NonOptionalNull sql.NullString //
 	// Tag promotion: partial tags (fewer components than total width)
 	GenericPairPartial Pair[string, int32] `iproto:"u8"`
-	// Tag promotion: sql.Null[T] has tagWidth 0 (struct), tags go to other fields
-	GenericNullPair Pair[sql.Null[string], int32] `iproto:"i16"`
+	// Tag promotion: sql.Null[T] with full tag (optional + inner + other field)
+	GenericNullPair Pair[sql.Null[string], int32] `iproto:"optional,ber,i16"`
+	// Tag promotion: sql.Null[T] with partial fill (just "optional", inner uses default)
+	GenericNullEvent Event[sql.Null[int64]] `iproto:"optional"`
 }

@@ -814,7 +814,10 @@ func (pp *pkgParser) parseType(expr ast.Expr, goType types.Type, tag *structtag.
 	}
 
 	if tag.Name == optional {
-		if _, isPtr := goType.(*types.Pointer); !isPtr {
+		_, isPtr := goType.(*types.Pointer)
+		_, isStruct := goType.(*types.Struct)
+
+		if !isPtr && !isStruct {
 			return nil, fmt.Errorf("%s: \"optional\" tag is only supported for pointer and sql.Null* types", astToSource(expr))
 		}
 	}
@@ -892,9 +895,63 @@ func usesTypeParam(t types.Type) bool {
 	}
 }
 
+// namedTagWidth returns the tag width of a named hardcoded type.
+// Returns (width, true) for recognized types, (0, false) otherwise.
+//
+// Hardcoded types have tag widths that differ from their underlying Go types:
+//   - time.Time: 1 (format specifier: i64 or u32)
+//   - sql.Null[T]: 1 (optional prefix) + tagWidth(T)
+//   - Legacy sql.NullXXX: 1 (optional prefix) + tagWidth(value field)
+//
+// Note: sql.Null* types without the "optional" tag are treated as plain structs
+// (tagWidth 0 via the default case). The width here reflects the maximum capacity
+// when "optional" IS specified. Partial fill allows providing just "optional"
+// without inner type tags — the inner type will use its default encoding.
+func namedTagWidth(named *types.Named) (int, bool) {
+	obj := named.Obj()
+
+	pkg := obj.Pkg()
+	if pkg == nil {
+		return 0, false
+	}
+
+	key := pkg.Path() + "." + obj.Name()
+
+	if key == "time.Time" {
+		return 1, true
+	}
+
+	// sql.Null[T] (generic): optional prefix + inner T
+	if key == "database/sql.Null" {
+		if ta := named.TypeArgs(); ta != nil && ta.Len() == 1 {
+			return 1 + tagWidth(ta.At(0)), true
+		}
+
+		return 1, true
+	}
+
+	// Legacy sql.NullXXX: optional prefix + value field type
+	if _, ok := hardcodedTypes[key]; ok {
+		st, ok := named.Underlying().(*types.Struct)
+		if ok && st.NumFields() > 0 {
+			return 1 + tagWidth(st.Field(0).Type()), true
+		}
+
+		return 1, true
+	}
+
+	return 0, false
+}
+
 // tagWidth returns the number of tag components a type consumes when serialized.
 // This is used to split the outer tag among multiple type-parameter fields.
 func tagWidth(goType types.Type) int {
+	if named, ok := types.Unalias(goType).(*types.Named); ok {
+		if w, ok := namedTagWidth(named); ok {
+			return w
+		}
+	}
+
 	switch t := goType.Underlying().(type) {
 	case *types.Basic:
 		return 1
@@ -992,17 +1049,17 @@ func resolveTagPromotion(namedType types.Type, tag *structtag.Tag) (map[int]*str
 			break
 		}
 
-		if pos+pf.width > len(components) {
-			return nil, fmt.Errorf("tag has %d remaining component(s) but next type parameter field requires %d",
-				len(components)-pos, pf.width)
+		consumed := pf.width
+		if pos+consumed > len(components) {
+			consumed = len(components) - pos
 		}
 
 		t := &structtag.Tag{Key: tag.Key, Name: components[pos]}
-		if pf.width > 1 {
-			t.Options = components[pos+1 : pos+pf.width]
+		if consumed > 1 {
+			t.Options = components[pos+1 : pos+consumed]
 		}
 
-		pos += pf.width
+		pos += consumed
 		promotions[pf.index] = t
 	}
 
