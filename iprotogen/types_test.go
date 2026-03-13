@@ -66,6 +66,12 @@ func TestTypes(t *testing.T) {
 			in:         Custom{hasMarshaler: true, hasUnmarshaler: true},
 			required:   []string{"x.MarshalIProto(buf)", "if err != nil"},
 			disallowed: []string{">>"},
+		}, {
+			in:       OptionalPointer{Type: Integer{Size: 4, TypeExpr: identUint32}, TypeExpr: identUint32},
+			required: []string{"x == nil", "append(buf, 0)", "append(buf, 1)", "(*x)>>"},
+		}, {
+			in:       OptionalNull{Type: Integer{Size: 8, TypeExpr: identInt64}, ValueField: ast.NewIdent("Int64")},
+			required: []string{"x.Valid", "append(buf, 0)", "append(buf, 1)", "x.Int64>>"},
 		},
 	}
 

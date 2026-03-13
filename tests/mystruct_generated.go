@@ -305,6 +305,175 @@ func (recvMyStruct MyStruct) MarshalIProto(buf []byte) ([]byte, error) {
 	buf = append(buf, byte(secRecvMyStruct_TimeUnix), byte(secRecvMyStruct_TimeUnix>>8), byte(secRecvMyStruct_TimeUnix>>16), byte(secRecvMyStruct_TimeUnix>>24))
 	nanoRecvMyStruct_TimeAlias := recvMyStruct.TimeAlias.UnixNano()
 	buf = append(buf, byte(nanoRecvMyStruct_TimeAlias), byte(nanoRecvMyStruct_TimeAlias>>8), byte(nanoRecvMyStruct_TimeAlias>>16), byte(nanoRecvMyStruct_TimeAlias>>24), byte(nanoRecvMyStruct_TimeAlias>>32), byte(nanoRecvMyStruct_TimeAlias>>40), byte(nanoRecvMyStruct_TimeAlias>>48), byte(nanoRecvMyStruct_TimeAlias>>56))
+	if recvMyStruct.OptionalInt == nil {
+		buf = append(buf, 0)
+	} else {
+		buf = append(buf, 1)
+		buf = iproto.EncodeBER(buf, uint64((*recvMyStruct.OptionalInt)))
+	}
+	if recvMyStruct.OptionalIntNil == nil {
+		buf = append(buf, 0)
+	} else {
+		buf = append(buf, 1)
+		buf = iproto.EncodeBER(buf, uint64((*recvMyStruct.OptionalIntNil)))
+	}
+	if recvMyStruct.OptionalStr == nil {
+		buf = append(buf, 0)
+	} else {
+		buf = append(buf, 1)
+		if len((*recvMyStruct.OptionalStr)) > 255 {
+			return nil, fmt.Errorf("MarshalIProto: Len((*recvMyStruct.OptionalStr)): %w: %d > %d", iproto.ErrOverflow, len((*recvMyStruct.OptionalStr)), 255)
+		}
+		buf = append(buf, byte(len((*recvMyStruct.OptionalStr))))
+		buf = append(buf, (*recvMyStruct.OptionalStr)...)
+	}
+	if recvMyStruct.OptionalStrNil == nil {
+		buf = append(buf, 0)
+	} else {
+		buf = append(buf, 1)
+		if len((*recvMyStruct.OptionalStrNil)) > 255 {
+			return nil, fmt.Errorf("MarshalIProto: Len((*recvMyStruct.OptionalStrNil)): %w: %d > %d", iproto.ErrOverflow, len((*recvMyStruct.OptionalStrNil)), 255)
+		}
+		buf = append(buf, byte(len((*recvMyStruct.OptionalStrNil))))
+		buf = append(buf, (*recvMyStruct.OptionalStrNil)...)
+	}
+	if recvMyStruct.OptionalStruct == nil {
+		buf = append(buf, 0)
+	} else {
+		buf = append(buf, 1)
+		buf = iproto.EncodeBER(buf, uint64((*recvMyStruct.OptionalStruct).IntField))
+		buf = iproto.EncodeBER(buf, uint64((*recvMyStruct.OptionalStruct).InnerInt))
+		buf = append(buf, byte((*recvMyStruct.OptionalStruct).Int8))
+		buf = append(buf, byte((*recvMyStruct.OptionalStruct).DefInt8))
+		buf = append(buf, (*recvMyStruct.OptionalStruct).Uint8)
+		buf = append(buf, byte((*recvMyStruct.OptionalStruct).Uint16), byte((*recvMyStruct.OptionalStruct).Uint16>>8))
+		buf = append(buf, byte((*recvMyStruct.OptionalStruct).Uint32), byte((*recvMyStruct.OptionalStruct).Uint32>>8), byte((*recvMyStruct.OptionalStruct).Uint32>>16), byte((*recvMyStruct.OptionalStruct).Uint32>>24))
+		buf = append(buf, byte((*recvMyStruct.OptionalStruct).Uint64), byte((*recvMyStruct.OptionalStruct).Uint64>>8), byte((*recvMyStruct.OptionalStruct).Uint64>>16), byte((*recvMyStruct.OptionalStruct).Uint64>>24), byte((*recvMyStruct.OptionalStruct).Uint64>>32), byte((*recvMyStruct.OptionalStruct).Uint64>>40), byte((*recvMyStruct.OptionalStruct).Uint64>>48), byte((*recvMyStruct.OptionalStruct).Uint64>>56))
+		buf = append(buf, byte((*recvMyStruct.OptionalStruct).DefUint8))
+		buf = append(buf, byte((*recvMyStruct.OptionalStruct).DefUint16), byte((*recvMyStruct.OptionalStruct).DefUint16>>8))
+		buf = append(buf, byte((*recvMyStruct.OptionalStruct).DefUint32), byte((*recvMyStruct.OptionalStruct).DefUint32>>8), byte((*recvMyStruct.OptionalStruct).DefUint32>>16), byte((*recvMyStruct.OptionalStruct).DefUint32>>24))
+		buf = append(buf, byte((*recvMyStruct.OptionalStruct).DefUint64), byte((*recvMyStruct.OptionalStruct).DefUint64>>8), byte((*recvMyStruct.OptionalStruct).DefUint64>>16), byte((*recvMyStruct.OptionalStruct).DefUint64>>24), byte((*recvMyStruct.OptionalStruct).DefUint64>>32), byte((*recvMyStruct.OptionalStruct).DefUint64>>40), byte((*recvMyStruct.OptionalStruct).DefUint64>>48), byte((*recvMyStruct.OptionalStruct).DefUint64>>56))
+		if (*recvMyStruct.OptionalStruct).Clipped > 65535 {
+			return nil, fmt.Errorf("MarshalIProto: (*recvMyStruct.OptionalStruct).Clipped: %w: %d > %d", iproto.ErrOverflow, (*recvMyStruct.OptionalStruct).Clipped, 65535)
+		}
+		buf = append(buf, byte((*recvMyStruct.OptionalStruct).Clipped), byte((*recvMyStruct.OptionalStruct).Clipped>>8))
+	}
+	if recvMyStruct.OptionalStructNil == nil {
+		buf = append(buf, 0)
+	} else {
+		buf = append(buf, 1)
+		buf = iproto.EncodeBER(buf, uint64((*recvMyStruct.OptionalStructNil).IntField))
+		buf = iproto.EncodeBER(buf, uint64((*recvMyStruct.OptionalStructNil).InnerInt))
+		buf = append(buf, byte((*recvMyStruct.OptionalStructNil).Int8))
+		buf = append(buf, byte((*recvMyStruct.OptionalStructNil).DefInt8))
+		buf = append(buf, (*recvMyStruct.OptionalStructNil).Uint8)
+		buf = append(buf, byte((*recvMyStruct.OptionalStructNil).Uint16), byte((*recvMyStruct.OptionalStructNil).Uint16>>8))
+		buf = append(buf, byte((*recvMyStruct.OptionalStructNil).Uint32), byte((*recvMyStruct.OptionalStructNil).Uint32>>8), byte((*recvMyStruct.OptionalStructNil).Uint32>>16), byte((*recvMyStruct.OptionalStructNil).Uint32>>24))
+		buf = append(buf, byte((*recvMyStruct.OptionalStructNil).Uint64), byte((*recvMyStruct.OptionalStructNil).Uint64>>8), byte((*recvMyStruct.OptionalStructNil).Uint64>>16), byte((*recvMyStruct.OptionalStructNil).Uint64>>24), byte((*recvMyStruct.OptionalStructNil).Uint64>>32), byte((*recvMyStruct.OptionalStructNil).Uint64>>40), byte((*recvMyStruct.OptionalStructNil).Uint64>>48), byte((*recvMyStruct.OptionalStructNil).Uint64>>56))
+		buf = append(buf, byte((*recvMyStruct.OptionalStructNil).DefUint8))
+		buf = append(buf, byte((*recvMyStruct.OptionalStructNil).DefUint16), byte((*recvMyStruct.OptionalStructNil).DefUint16>>8))
+		buf = append(buf, byte((*recvMyStruct.OptionalStructNil).DefUint32), byte((*recvMyStruct.OptionalStructNil).DefUint32>>8), byte((*recvMyStruct.OptionalStructNil).DefUint32>>16), byte((*recvMyStruct.OptionalStructNil).DefUint32>>24))
+		buf = append(buf, byte((*recvMyStruct.OptionalStructNil).DefUint64), byte((*recvMyStruct.OptionalStructNil).DefUint64>>8), byte((*recvMyStruct.OptionalStructNil).DefUint64>>16), byte((*recvMyStruct.OptionalStructNil).DefUint64>>24), byte((*recvMyStruct.OptionalStructNil).DefUint64>>32), byte((*recvMyStruct.OptionalStructNil).DefUint64>>40), byte((*recvMyStruct.OptionalStructNil).DefUint64>>48), byte((*recvMyStruct.OptionalStructNil).DefUint64>>56))
+		if (*recvMyStruct.OptionalStructNil).Clipped > 65535 {
+			return nil, fmt.Errorf("MarshalIProto: (*recvMyStruct.OptionalStructNil).Clipped: %w: %d > %d", iproto.ErrOverflow, (*recvMyStruct.OptionalStructNil).Clipped, 65535)
+		}
+		buf = append(buf, byte((*recvMyStruct.OptionalStructNil).Clipped), byte((*recvMyStruct.OptionalStructNil).Clipped>>8))
+	}
+	if recvMyStruct.OptionalNullStr.Valid {
+		buf = append(buf, 1)
+		buf = iproto.EncodeBER(buf, uint64(len(recvMyStruct.OptionalNullStr.String)))
+		buf = append(buf, recvMyStruct.OptionalNullStr.String...)
+	} else {
+		buf = append(buf, 0)
+	}
+	if recvMyStruct.OptionalNullStrEmpty.Valid {
+		buf = append(buf, 1)
+		buf = iproto.EncodeBER(buf, uint64(len(recvMyStruct.OptionalNullStrEmpty.String)))
+		buf = append(buf, recvMyStruct.OptionalNullStrEmpty.String...)
+	} else {
+		buf = append(buf, 0)
+	}
+	if recvMyStruct.OptionalNullInt64.Valid {
+		buf = append(buf, 1)
+		buf = append(buf, byte(recvMyStruct.OptionalNullInt64.Int64), byte(recvMyStruct.OptionalNullInt64.Int64>>8), byte(recvMyStruct.OptionalNullInt64.Int64>>16), byte(recvMyStruct.OptionalNullInt64.Int64>>24), byte(recvMyStruct.OptionalNullInt64.Int64>>32), byte(recvMyStruct.OptionalNullInt64.Int64>>40), byte(recvMyStruct.OptionalNullInt64.Int64>>48), byte(recvMyStruct.OptionalNullInt64.Int64>>56))
+	} else {
+		buf = append(buf, 0)
+	}
+	if recvMyStruct.OptionalNullInt64Nil.Valid {
+		buf = append(buf, 1)
+		buf = append(buf, byte(recvMyStruct.OptionalNullInt64Nil.Int64), byte(recvMyStruct.OptionalNullInt64Nil.Int64>>8), byte(recvMyStruct.OptionalNullInt64Nil.Int64>>16), byte(recvMyStruct.OptionalNullInt64Nil.Int64>>24), byte(recvMyStruct.OptionalNullInt64Nil.Int64>>32), byte(recvMyStruct.OptionalNullInt64Nil.Int64>>40), byte(recvMyStruct.OptionalNullInt64Nil.Int64>>48), byte(recvMyStruct.OptionalNullInt64Nil.Int64>>56))
+	} else {
+		buf = append(buf, 0)
+	}
+	if recvMyStruct.OptionalNullBool.Valid {
+		buf = append(buf, 1)
+		if recvMyStruct.OptionalNullBool.Bool {
+			buf = append(buf, 1)
+		} else {
+			buf = append(buf, 0)
+		}
+	} else {
+		buf = append(buf, 0)
+	}
+	if recvMyStruct.OptionalNullFloat64.Valid {
+		buf = append(buf, 1)
+		bitsRecvMyStruct_OptionalNullFloat64_Float64 := math.Float64bits(recvMyStruct.OptionalNullFloat64.Float64)
+		buf = append(buf, byte(bitsRecvMyStruct_OptionalNullFloat64_Float64), byte(bitsRecvMyStruct_OptionalNullFloat64_Float64>>8), byte(bitsRecvMyStruct_OptionalNullFloat64_Float64>>16), byte(bitsRecvMyStruct_OptionalNullFloat64_Float64>>24), byte(bitsRecvMyStruct_OptionalNullFloat64_Float64>>32), byte(bitsRecvMyStruct_OptionalNullFloat64_Float64>>40), byte(bitsRecvMyStruct_OptionalNullFloat64_Float64>>48), byte(bitsRecvMyStruct_OptionalNullFloat64_Float64>>56))
+	} else {
+		buf = append(buf, 0)
+	}
+	if recvMyStruct.OptionalNullInt32.Valid {
+		buf = append(buf, 1)
+		buf = append(buf, byte(recvMyStruct.OptionalNullInt32.Int32), byte(recvMyStruct.OptionalNullInt32.Int32>>8), byte(recvMyStruct.OptionalNullInt32.Int32>>16), byte(recvMyStruct.OptionalNullInt32.Int32>>24))
+	} else {
+		buf = append(buf, 0)
+	}
+	if recvMyStruct.OptionalNullInt16.Valid {
+		buf = append(buf, 1)
+		buf = append(buf, byte(recvMyStruct.OptionalNullInt16.Int16), byte(recvMyStruct.OptionalNullInt16.Int16>>8))
+	} else {
+		buf = append(buf, 0)
+	}
+	if recvMyStruct.OptionalNullByte.Valid {
+		buf = append(buf, 1)
+		buf = append(buf, recvMyStruct.OptionalNullByte.Byte)
+	} else {
+		buf = append(buf, 0)
+	}
+	if recvMyStruct.OptionalNullTime.Valid {
+		buf = append(buf, 1)
+		nanoRecvMyStruct_OptionalNullTime_Time := recvMyStruct.OptionalNullTime.Time.UnixNano()
+		buf = append(buf, byte(nanoRecvMyStruct_OptionalNullTime_Time), byte(nanoRecvMyStruct_OptionalNullTime_Time>>8), byte(nanoRecvMyStruct_OptionalNullTime_Time>>16), byte(nanoRecvMyStruct_OptionalNullTime_Time>>24), byte(nanoRecvMyStruct_OptionalNullTime_Time>>32), byte(nanoRecvMyStruct_OptionalNullTime_Time>>40), byte(nanoRecvMyStruct_OptionalNullTime_Time>>48), byte(nanoRecvMyStruct_OptionalNullTime_Time>>56))
+	} else {
+		buf = append(buf, 0)
+	}
+	if recvMyStruct.OptionalNullTimeU32.Valid {
+		buf = append(buf, 1)
+		secRecvMyStruct_OptionalNullTimeU32_Time := uint32(recvMyStruct.OptionalNullTimeU32.Time.Unix())
+		buf = append(buf, byte(secRecvMyStruct_OptionalNullTimeU32_Time), byte(secRecvMyStruct_OptionalNullTimeU32_Time>>8), byte(secRecvMyStruct_OptionalNullTimeU32_Time>>16), byte(secRecvMyStruct_OptionalNullTimeU32_Time>>24))
+	} else {
+		buf = append(buf, 0)
+	}
+	if recvMyStruct.OptionalNullGeneric.Valid {
+		buf = append(buf, 1)
+		buf = append(buf, byte(recvMyStruct.OptionalNullGeneric.V), byte(recvMyStruct.OptionalNullGeneric.V>>8), byte(recvMyStruct.OptionalNullGeneric.V>>16), byte(recvMyStruct.OptionalNullGeneric.V>>24), byte(recvMyStruct.OptionalNullGeneric.V>>32), byte(recvMyStruct.OptionalNullGeneric.V>>40), byte(recvMyStruct.OptionalNullGeneric.V>>48), byte(recvMyStruct.OptionalNullGeneric.V>>56))
+	} else {
+		buf = append(buf, 0)
+	}
+	if recvMyStruct.OptionalNullFloat32.Valid {
+		buf = append(buf, 1)
+		bitsRecvMyStruct_OptionalNullFloat32_V := math.Float32bits(recvMyStruct.OptionalNullFloat32.V)
+		buf = append(buf, byte(bitsRecvMyStruct_OptionalNullFloat32_V), byte(bitsRecvMyStruct_OptionalNullFloat32_V>>8), byte(bitsRecvMyStruct_OptionalNullFloat32_V>>16), byte(bitsRecvMyStruct_OptionalNullFloat32_V>>24))
+	} else {
+		buf = append(buf, 0)
+	}
+	buf = append(buf, byte(len(recvMyStruct.NonOptionalNull.String)), byte(len(recvMyStruct.NonOptionalNull.String)>>8), byte(len(recvMyStruct.NonOptionalNull.String)>>16), byte(len(recvMyStruct.NonOptionalNull.String)>>24))
+	buf = append(buf, recvMyStruct.NonOptionalNull.String...)
+	if recvMyStruct.NonOptionalNull.Valid {
+		buf = append(buf, 1)
+	} else {
+		buf = append(buf, 0)
+	}
 	return buf, nil
 }
 func (recv_MyStruct *MyStruct) UnmarshalIProto(buf []byte) ([]byte, error) {
@@ -1112,6 +1281,450 @@ func (recv_MyStruct *MyStruct) UnmarshalIProto(buf []byte) ([]byte, error) {
 	nanoRecv_MyStruct_TimeAlias := int64(binary.LittleEndian.Uint64(buf))
 	buf = buf[8:]
 	recv_MyStruct.TimeAlias = time.Unix(0, nanoRecv_MyStruct_TimeAlias)
+	if len(buf) < 1 {
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.OptionalInt: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+	}
+	if buf[0] != 0 {
+		buf = buf[1:]
+		recv_MyStruct.OptionalInt = new(int)
+		u64, buf, err = iproto.DecodeBER(buf)
+		if err != nil {
+			return nil, err
+		}
+		*recv_MyStruct.OptionalInt = int(u64)
+	} else {
+		recv_MyStruct.OptionalInt = nil
+		buf = buf[1:]
+	}
+	if len(buf) < 1 {
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.OptionalIntNil: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+	}
+	if buf[0] != 0 {
+		buf = buf[1:]
+		recv_MyStruct.OptionalIntNil = new(int)
+		u64, buf, err = iproto.DecodeBER(buf)
+		if err != nil {
+			return nil, err
+		}
+		*recv_MyStruct.OptionalIntNil = int(u64)
+	} else {
+		recv_MyStruct.OptionalIntNil = nil
+		buf = buf[1:]
+	}
+	if len(buf) < 1 {
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.OptionalStr: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+	}
+	if buf[0] != 0 {
+		buf = buf[1:]
+		recv_MyStruct.OptionalStr = new(string)
+		if len(buf) < 1 {
+			return nil, fmt.Errorf("UnmarshalIProto: Len_recv_MyStruct_OptionalStr: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+		}
+		len_recv_MyStruct_OptionalStr := int(buf[0])
+		buf = buf[1:]
+		if len(buf) < len_recv_MyStruct_OptionalStr {
+			return nil, fmt.Errorf("UnmarshalIProto: *recv_MyStruct.OptionalStr: %w: %d < %d", iproto.ErrOverflow, len(buf), len_recv_MyStruct_OptionalStr)
+		}
+		*recv_MyStruct.OptionalStr = string(buf[:len_recv_MyStruct_OptionalStr])
+		buf = buf[len_recv_MyStruct_OptionalStr:]
+	} else {
+		recv_MyStruct.OptionalStr = nil
+		buf = buf[1:]
+	}
+	if len(buf) < 1 {
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.OptionalStrNil: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+	}
+	if buf[0] != 0 {
+		buf = buf[1:]
+		recv_MyStruct.OptionalStrNil = new(string)
+		if len(buf) < 1 {
+			return nil, fmt.Errorf("UnmarshalIProto: Len_recv_MyStruct_OptionalStrNil: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+		}
+		len_recv_MyStruct_OptionalStrNil := int(buf[0])
+		buf = buf[1:]
+		if len(buf) < len_recv_MyStruct_OptionalStrNil {
+			return nil, fmt.Errorf("UnmarshalIProto: *recv_MyStruct.OptionalStrNil: %w: %d < %d", iproto.ErrOverflow, len(buf), len_recv_MyStruct_OptionalStrNil)
+		}
+		*recv_MyStruct.OptionalStrNil = string(buf[:len_recv_MyStruct_OptionalStrNil])
+		buf = buf[len_recv_MyStruct_OptionalStrNil:]
+	} else {
+		recv_MyStruct.OptionalStrNil = nil
+		buf = buf[1:]
+	}
+	if len(buf) < 1 {
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.OptionalStruct: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+	}
+	if buf[0] != 0 {
+		buf = buf[1:]
+		recv_MyStruct.OptionalStruct = new(Ints)
+		u64, buf, err = iproto.DecodeBER(buf)
+		if err != nil {
+			return nil, err
+		}
+		recv_MyStruct.OptionalStruct.IntField = MyInt(u64)
+		u64, buf, err = iproto.DecodeBER(buf)
+		if err != nil {
+			return nil, err
+		}
+		recv_MyStruct.OptionalStruct.InnerInt = innerpkg.InnerInt(u64)
+		if len(buf) < 1 {
+			return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.OptionalStruct.Int8: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+		}
+		recv_MyStruct.OptionalStruct.Int8 = int8(buf[0])
+		buf = buf[1:]
+		if len(buf) < 1 {
+			return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.OptionalStruct.DefInt8: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+		}
+		recv_MyStruct.OptionalStruct.DefInt8 = iprototypes.Int8(buf[0])
+		buf = buf[1:]
+		if len(buf) < 1 {
+			return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.OptionalStruct.Uint8: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+		}
+		recv_MyStruct.OptionalStruct.Uint8 = buf[0]
+		buf = buf[1:]
+		if len(buf) < 2 {
+			return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.OptionalStruct.Uint16: %w: %d < %d", iproto.ErrOverflow, len(buf), 2)
+		}
+		recv_MyStruct.OptionalStruct.Uint16 = binary.LittleEndian.Uint16(buf)
+		buf = buf[2:]
+		if len(buf) < 4 {
+			return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.OptionalStruct.Uint32: %w: %d < %d", iproto.ErrOverflow, len(buf), 4)
+		}
+		recv_MyStruct.OptionalStruct.Uint32 = binary.LittleEndian.Uint32(buf)
+		buf = buf[4:]
+		if len(buf) < 8 {
+			return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.OptionalStruct.Uint64: %w: %d < %d", iproto.ErrOverflow, len(buf), 8)
+		}
+		recv_MyStruct.OptionalStruct.Uint64 = binary.LittleEndian.Uint64(buf)
+		buf = buf[8:]
+		if len(buf) < 1 {
+			return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.OptionalStruct.DefUint8: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+		}
+		recv_MyStruct.OptionalStruct.DefUint8 = iprototypes.Uint8(buf[0])
+		buf = buf[1:]
+		if len(buf) < 2 {
+			return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.OptionalStruct.DefUint16: %w: %d < %d", iproto.ErrOverflow, len(buf), 2)
+		}
+		recv_MyStruct.OptionalStruct.DefUint16 = iprototypes.Uint16(binary.LittleEndian.Uint16(buf))
+		buf = buf[2:]
+		if len(buf) < 4 {
+			return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.OptionalStruct.DefUint32: %w: %d < %d", iproto.ErrOverflow, len(buf), 4)
+		}
+		recv_MyStruct.OptionalStruct.DefUint32 = iprototypes.Uint32(binary.LittleEndian.Uint32(buf))
+		buf = buf[4:]
+		if len(buf) < 8 {
+			return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.OptionalStruct.DefUint64: %w: %d < %d", iproto.ErrOverflow, len(buf), 8)
+		}
+		recv_MyStruct.OptionalStruct.DefUint64 = iprototypes.Uint64(binary.LittleEndian.Uint64(buf))
+		buf = buf[8:]
+		if len(buf) < 2 {
+			return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.OptionalStruct.Clipped: %w: %d < %d", iproto.ErrOverflow, len(buf), 2)
+		}
+		recv_MyStruct.OptionalStruct.Clipped = uint32(binary.LittleEndian.Uint16(buf))
+		buf = buf[2:]
+	} else {
+		recv_MyStruct.OptionalStruct = nil
+		buf = buf[1:]
+	}
+	if len(buf) < 1 {
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.OptionalStructNil: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+	}
+	if buf[0] != 0 {
+		buf = buf[1:]
+		recv_MyStruct.OptionalStructNil = new(Ints)
+		u64, buf, err = iproto.DecodeBER(buf)
+		if err != nil {
+			return nil, err
+		}
+		recv_MyStruct.OptionalStructNil.IntField = MyInt(u64)
+		u64, buf, err = iproto.DecodeBER(buf)
+		if err != nil {
+			return nil, err
+		}
+		recv_MyStruct.OptionalStructNil.InnerInt = innerpkg.InnerInt(u64)
+		if len(buf) < 1 {
+			return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.OptionalStructNil.Int8: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+		}
+		recv_MyStruct.OptionalStructNil.Int8 = int8(buf[0])
+		buf = buf[1:]
+		if len(buf) < 1 {
+			return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.OptionalStructNil.DefInt8: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+		}
+		recv_MyStruct.OptionalStructNil.DefInt8 = iprototypes.Int8(buf[0])
+		buf = buf[1:]
+		if len(buf) < 1 {
+			return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.OptionalStructNil.Uint8: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+		}
+		recv_MyStruct.OptionalStructNil.Uint8 = buf[0]
+		buf = buf[1:]
+		if len(buf) < 2 {
+			return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.OptionalStructNil.Uint16: %w: %d < %d", iproto.ErrOverflow, len(buf), 2)
+		}
+		recv_MyStruct.OptionalStructNil.Uint16 = binary.LittleEndian.Uint16(buf)
+		buf = buf[2:]
+		if len(buf) < 4 {
+			return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.OptionalStructNil.Uint32: %w: %d < %d", iproto.ErrOverflow, len(buf), 4)
+		}
+		recv_MyStruct.OptionalStructNil.Uint32 = binary.LittleEndian.Uint32(buf)
+		buf = buf[4:]
+		if len(buf) < 8 {
+			return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.OptionalStructNil.Uint64: %w: %d < %d", iproto.ErrOverflow, len(buf), 8)
+		}
+		recv_MyStruct.OptionalStructNil.Uint64 = binary.LittleEndian.Uint64(buf)
+		buf = buf[8:]
+		if len(buf) < 1 {
+			return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.OptionalStructNil.DefUint8: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+		}
+		recv_MyStruct.OptionalStructNil.DefUint8 = iprototypes.Uint8(buf[0])
+		buf = buf[1:]
+		if len(buf) < 2 {
+			return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.OptionalStructNil.DefUint16: %w: %d < %d", iproto.ErrOverflow, len(buf), 2)
+		}
+		recv_MyStruct.OptionalStructNil.DefUint16 = iprototypes.Uint16(binary.LittleEndian.Uint16(buf))
+		buf = buf[2:]
+		if len(buf) < 4 {
+			return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.OptionalStructNil.DefUint32: %w: %d < %d", iproto.ErrOverflow, len(buf), 4)
+		}
+		recv_MyStruct.OptionalStructNil.DefUint32 = iprototypes.Uint32(binary.LittleEndian.Uint32(buf))
+		buf = buf[4:]
+		if len(buf) < 8 {
+			return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.OptionalStructNil.DefUint64: %w: %d < %d", iproto.ErrOverflow, len(buf), 8)
+		}
+		recv_MyStruct.OptionalStructNil.DefUint64 = iprototypes.Uint64(binary.LittleEndian.Uint64(buf))
+		buf = buf[8:]
+		if len(buf) < 2 {
+			return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.OptionalStructNil.Clipped: %w: %d < %d", iproto.ErrOverflow, len(buf), 2)
+		}
+		recv_MyStruct.OptionalStructNil.Clipped = uint32(binary.LittleEndian.Uint16(buf))
+		buf = buf[2:]
+	} else {
+		recv_MyStruct.OptionalStructNil = nil
+		buf = buf[1:]
+	}
+	if len(buf) < 1 {
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.OptionalNullStr: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+	}
+	if buf[0] != 0 {
+		buf = buf[1:]
+		recv_MyStruct.OptionalNullStr.Valid = true
+		u64, buf, err = iproto.DecodeBER(buf)
+		if err != nil {
+			return nil, err
+		}
+		lenRecv_MyStruct_OptionalNullStr_String := int(u64)
+		if len(buf) < lenRecv_MyStruct_OptionalNullStr_String {
+			return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.OptionalNullStr.String: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_OptionalNullStr_String)
+		}
+		recv_MyStruct.OptionalNullStr.String = string(buf[:lenRecv_MyStruct_OptionalNullStr_String])
+		buf = buf[lenRecv_MyStruct_OptionalNullStr_String:]
+	} else {
+		recv_MyStruct.OptionalNullStr.Valid = false
+		buf = buf[1:]
+	}
+	if len(buf) < 1 {
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.OptionalNullStrEmpty: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+	}
+	if buf[0] != 0 {
+		buf = buf[1:]
+		recv_MyStruct.OptionalNullStrEmpty.Valid = true
+		u64, buf, err = iproto.DecodeBER(buf)
+		if err != nil {
+			return nil, err
+		}
+		lenRecv_MyStruct_OptionalNullStrEmpty_String := int(u64)
+		if len(buf) < lenRecv_MyStruct_OptionalNullStrEmpty_String {
+			return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.OptionalNullStrEmpty.String: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_OptionalNullStrEmpty_String)
+		}
+		recv_MyStruct.OptionalNullStrEmpty.String = string(buf[:lenRecv_MyStruct_OptionalNullStrEmpty_String])
+		buf = buf[lenRecv_MyStruct_OptionalNullStrEmpty_String:]
+	} else {
+		recv_MyStruct.OptionalNullStrEmpty.Valid = false
+		buf = buf[1:]
+	}
+	if len(buf) < 1 {
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.OptionalNullInt64: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+	}
+	if buf[0] != 0 {
+		buf = buf[1:]
+		recv_MyStruct.OptionalNullInt64.Valid = true
+		if len(buf) < 8 {
+			return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.OptionalNullInt64.Int64: %w: %d < %d", iproto.ErrOverflow, len(buf), 8)
+		}
+		recv_MyStruct.OptionalNullInt64.Int64 = int64(binary.LittleEndian.Uint64(buf))
+		buf = buf[8:]
+	} else {
+		recv_MyStruct.OptionalNullInt64.Valid = false
+		buf = buf[1:]
+	}
+	if len(buf) < 1 {
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.OptionalNullInt64Nil: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+	}
+	if buf[0] != 0 {
+		buf = buf[1:]
+		recv_MyStruct.OptionalNullInt64Nil.Valid = true
+		if len(buf) < 8 {
+			return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.OptionalNullInt64Nil.Int64: %w: %d < %d", iproto.ErrOverflow, len(buf), 8)
+		}
+		recv_MyStruct.OptionalNullInt64Nil.Int64 = int64(binary.LittleEndian.Uint64(buf))
+		buf = buf[8:]
+	} else {
+		recv_MyStruct.OptionalNullInt64Nil.Valid = false
+		buf = buf[1:]
+	}
+	if len(buf) < 1 {
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.OptionalNullBool: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+	}
+	if buf[0] != 0 {
+		buf = buf[1:]
+		recv_MyStruct.OptionalNullBool.Valid = true
+		if len(buf) < 1 {
+			return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.OptionalNullBool.Bool: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+		}
+		recv_MyStruct.OptionalNullBool.Bool = buf[0] != 0
+		buf = buf[1:]
+	} else {
+		recv_MyStruct.OptionalNullBool.Valid = false
+		buf = buf[1:]
+	}
+	if len(buf) < 1 {
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.OptionalNullFloat64: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+	}
+	if buf[0] != 0 {
+		buf = buf[1:]
+		recv_MyStruct.OptionalNullFloat64.Valid = true
+		if len(buf) < 8 {
+			return nil, fmt.Errorf("UnmarshalIProto: BitsRecv_MyStruct_OptionalNullFloat64_Float64: %w: %d < %d", iproto.ErrOverflow, len(buf), 8)
+		}
+		bitsRecv_MyStruct_OptionalNullFloat64_Float64 := binary.LittleEndian.Uint64(buf)
+		buf = buf[8:]
+		recv_MyStruct.OptionalNullFloat64.Float64 = math.Float64frombits(bitsRecv_MyStruct_OptionalNullFloat64_Float64)
+	} else {
+		recv_MyStruct.OptionalNullFloat64.Valid = false
+		buf = buf[1:]
+	}
+	if len(buf) < 1 {
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.OptionalNullInt32: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+	}
+	if buf[0] != 0 {
+		buf = buf[1:]
+		recv_MyStruct.OptionalNullInt32.Valid = true
+		if len(buf) < 4 {
+			return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.OptionalNullInt32.Int32: %w: %d < %d", iproto.ErrOverflow, len(buf), 4)
+		}
+		recv_MyStruct.OptionalNullInt32.Int32 = int32(binary.LittleEndian.Uint32(buf))
+		buf = buf[4:]
+	} else {
+		recv_MyStruct.OptionalNullInt32.Valid = false
+		buf = buf[1:]
+	}
+	if len(buf) < 1 {
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.OptionalNullInt16: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+	}
+	if buf[0] != 0 {
+		buf = buf[1:]
+		recv_MyStruct.OptionalNullInt16.Valid = true
+		if len(buf) < 2 {
+			return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.OptionalNullInt16.Int16: %w: %d < %d", iproto.ErrOverflow, len(buf), 2)
+		}
+		recv_MyStruct.OptionalNullInt16.Int16 = int16(binary.LittleEndian.Uint16(buf))
+		buf = buf[2:]
+	} else {
+		recv_MyStruct.OptionalNullInt16.Valid = false
+		buf = buf[1:]
+	}
+	if len(buf) < 1 {
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.OptionalNullByte: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+	}
+	if buf[0] != 0 {
+		buf = buf[1:]
+		recv_MyStruct.OptionalNullByte.Valid = true
+		if len(buf) < 1 {
+			return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.OptionalNullByte.Byte: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+		}
+		recv_MyStruct.OptionalNullByte.Byte = buf[0]
+		buf = buf[1:]
+	} else {
+		recv_MyStruct.OptionalNullByte.Valid = false
+		buf = buf[1:]
+	}
+	if len(buf) < 1 {
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.OptionalNullTime: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+	}
+	if buf[0] != 0 {
+		buf = buf[1:]
+		recv_MyStruct.OptionalNullTime.Valid = true
+		if len(buf) < 8 {
+			return nil, fmt.Errorf("UnmarshalIProto: NanoRecv_MyStruct_OptionalNullTime_Time: %w: %d < %d", iproto.ErrOverflow, len(buf), 8)
+		}
+		nanoRecv_MyStruct_OptionalNullTime_Time := int64(binary.LittleEndian.Uint64(buf))
+		buf = buf[8:]
+		recv_MyStruct.OptionalNullTime.Time = time.Unix(0, nanoRecv_MyStruct_OptionalNullTime_Time)
+	} else {
+		recv_MyStruct.OptionalNullTime.Valid = false
+		buf = buf[1:]
+	}
+	if len(buf) < 1 {
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.OptionalNullTimeU32: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+	}
+	if buf[0] != 0 {
+		buf = buf[1:]
+		recv_MyStruct.OptionalNullTimeU32.Valid = true
+		if len(buf) < 4 {
+			return nil, fmt.Errorf("UnmarshalIProto: SecRecv_MyStruct_OptionalNullTimeU32_Time: %w: %d < %d", iproto.ErrOverflow, len(buf), 4)
+		}
+		secRecv_MyStruct_OptionalNullTimeU32_Time := binary.LittleEndian.Uint32(buf)
+		buf = buf[4:]
+		recv_MyStruct.OptionalNullTimeU32.Time = time.Unix(int64(secRecv_MyStruct_OptionalNullTimeU32_Time), 0)
+	} else {
+		recv_MyStruct.OptionalNullTimeU32.Valid = false
+		buf = buf[1:]
+	}
+	if len(buf) < 1 {
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.OptionalNullGeneric: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+	}
+	if buf[0] != 0 {
+		buf = buf[1:]
+		recv_MyStruct.OptionalNullGeneric.Valid = true
+		if len(buf) < 8 {
+			return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.OptionalNullGeneric.V: %w: %d < %d", iproto.ErrOverflow, len(buf), 8)
+		}
+		recv_MyStruct.OptionalNullGeneric.V = int64(binary.LittleEndian.Uint64(buf))
+		buf = buf[8:]
+	} else {
+		recv_MyStruct.OptionalNullGeneric.Valid = false
+		buf = buf[1:]
+	}
+	if len(buf) < 1 {
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.OptionalNullFloat32: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+	}
+	if buf[0] != 0 {
+		buf = buf[1:]
+		recv_MyStruct.OptionalNullFloat32.Valid = true
+		if len(buf) < 4 {
+			return nil, fmt.Errorf("UnmarshalIProto: BitsRecv_MyStruct_OptionalNullFloat32_V: %w: %d < %d", iproto.ErrOverflow, len(buf), 4)
+		}
+		bitsRecv_MyStruct_OptionalNullFloat32_V := binary.LittleEndian.Uint32(buf)
+		buf = buf[4:]
+		recv_MyStruct.OptionalNullFloat32.V = math.Float32frombits(bitsRecv_MyStruct_OptionalNullFloat32_V)
+	} else {
+		recv_MyStruct.OptionalNullFloat32.Valid = false
+		buf = buf[1:]
+	}
+	if len(buf) < 4 {
+		return nil, fmt.Errorf("UnmarshalIProto: LenRecv_MyStruct_NonOptionalNull_String: %w: %d < %d", iproto.ErrOverflow, len(buf), 4)
+	}
+	lenRecv_MyStruct_NonOptionalNull_String := int(binary.LittleEndian.Uint32(buf))
+	buf = buf[4:]
+	if len(buf) < lenRecv_MyStruct_NonOptionalNull_String {
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.NonOptionalNull.String: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_NonOptionalNull_String)
+	}
+	recv_MyStruct.NonOptionalNull.String = string(buf[:lenRecv_MyStruct_NonOptionalNull_String])
+	buf = buf[lenRecv_MyStruct_NonOptionalNull_String:]
+	if len(buf) < 1 {
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.NonOptionalNull.Valid: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+	}
+	recv_MyStruct.NonOptionalNull.Valid = buf[0] != 0
+	buf = buf[1:]
 	return buf, nil
 }
 func (recvUUID UUID) MarshalIProto(buf []byte) ([]byte, error) {

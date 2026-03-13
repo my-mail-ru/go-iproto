@@ -98,6 +98,7 @@ $ go get -tool github.com/my-mail-ru/go-iproto/cmd/iprotogen
 - `bool` (возможно указать значение для true и false, по умолчанию - байты 1 и 0 соответственно).
 - Структуры с полями поддерживаемых типов. Сериализуются все публичные поля. Изменить дефолтный тип можно указанием тега.
 - Указатели на поддерживаемые типы.
+- Опциональные значения: указатели и `sql.Null*` с тегом `optional` (подробнее в разделе «Опциональные значения»).
 - Типы, определённые на базе поддерживаемых.
 - `time.Time` (подробнее в разделе «time.Time»).
 
@@ -197,12 +198,43 @@ type myTime = time.Time
 
 //adv:iproto:
 type MyStruct struct {
-    CreatedAt time.Time              // по умолчанию i64 (наносекунды)
+    CreatedAt time.Time                // по умолчанию i64 (наносекунды)
     UpdatedAt time.Time `iproto:"i64"` // наносекунды (явно)
     ExpiredAt time.Time `iproto:"u32"` // секунды
-    AliasTime myTime                 // алиасы поддерживаются
+    AliasTime myTime                   // алиасы поддерживаются
 }
 ```
+
+# Опциональные значения (optional)
+
+Указатели и типы `sql.Null*` можно использовать для передачи опциональных значений.
+Для типов `sql.Null*` проверяется поле `Valid`: если `true`, значение присутствует; если `false` — отсутствует.
+nil-указатели считаются отсутствующими.
+
+Поддерживаемые типы:
+- Указатели на поддерживаемые типы: `*int`, `*string`, `*MyStruct`, ...
+- `sql.Null[T]` (generic)
+- `sql.NullString`, `sql.NullInt64`, `sql.NullInt32`, `sql.NullInt16`, `sql.NullFloat64`, `sql.NullBool`, `sql.NullByte`, `sql.NullTime`
+
+При сериализации опциональных значений, перед значением передаётся байт присутствия:
+- `0` — значение отсутствует (запись занимает 1 байт)
+- `1` — значение присутствует, за ним следует закодированное представление (запись занимает 1 + длина значения байт)
+
+```go
+//adv:iproto:
+type MyStruct struct {
+    OptionalInt    *int            `iproto:"optional,ber"`
+    OptionalStr    *string         `iproto:"optional,u8"`
+    OptionalStruct *Ints           `iproto:"optional"`
+    NullStr        sql.NullString  `iproto:"optional,ber"`
+    NullInt        sql.NullInt64   `iproto:"optional"`
+    NullGeneric    sql.Null[int64] `iproto:"optional"`
+}
+```
+
+Тег `optional` используется совместно с тегом типа значения (через запятую). Без тега `optional` указатели и `sql.Null*` сериализуются по старым правилам (для обратной совместимости):
+- Указатель без `optional` — разыменовывается, nil вызовет панику
+- `sql.Null*` без `optional` — сериализуется как обычная структура (поля `Value` + `Valid`)
 
 # Предопределённые типы
 

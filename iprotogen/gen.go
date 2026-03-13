@@ -46,6 +46,17 @@ var (
 	identUint64          = ast.NewIdent("uint64")
 	identUnmarshalIProto = ast.NewIdent("UnmarshalIProto")
 
+	// sql.Null* value field idents
+	identFieldString  = ast.NewIdent("String")
+	identFieldInt64   = ast.NewIdent("Int64")
+	identFieldInt32   = ast.NewIdent("Int32")
+	identFieldInt16   = ast.NewIdent("Int16")
+	identFieldByte    = ast.NewIdent("Byte")
+	identFieldBool    = ast.NewIdent("Bool")
+	identFieldFloat64 = ast.NewIdent("Float64")
+	identFieldTime    = ast.NewIdent("Time")
+	identV            = ast.NewIdent("V")
+
 	exprFmtErrorf       = exprDot(ast.NewIdent("fmt"), ast.NewIdent("Errorf"))
 	exprErrOverflow     = exprDot(identIProto, ast.NewIdent("ErrOverflow"))
 	exprEncodeBER       = exprDot(identIProto, ast.NewIdent("EncodeBER"))
@@ -55,7 +66,12 @@ var (
 	exprFloat32frombits = exprDot(identMath, ast.NewIdent("Float32frombits"))
 	exprFloat64frombits = exprDot(identMath, ast.NewIdent("Float64frombits"))
 	exprLittleEndian    = exprDot(ast.NewIdent("binary"), ast.NewIdent("LittleEndian"))
-	exprTimeUnix        = exprDot(ast.NewIdent("time"), ast.NewIdent("Unix"))
+	identTrue           = ast.NewIdent("true")
+	identFalse          = ast.NewIdent("false")
+	identValid          = ast.NewIdent("Valid")
+	identUnix           = ast.NewIdent("Unix")
+	identUnixNano       = ast.NewIdent("UnixNano")
+	exprTimeUnix        = exprDot(ast.NewIdent("time"), identUnix)
 	exprLenBuf          = exprCall(identLen, identBuf)
 	exprBytes           = &ast.ArrayType{Elt: identByte}
 	exprBufErr          = []ast.Expr{identBuf, identErr}
@@ -405,6 +421,7 @@ func varFromExpr(x ast.Expr, prefix string) *ast.Ident {
 func newImportMaps() (map[string]string, map[string]struct{}) {
 	byPkg := map[string]string{
 		iprotoPackage:     "iproto",
+		"database/sql":    "",
 		"fmt":             "",
 		"math":            "",
 		"slices":          "",
@@ -537,7 +554,7 @@ func isByteSlice(typ ast.Expr) bool {
 }
 
 func isByte(name string) bool {
-	return name == "uint8" || name == "byte"
+	return name == "uint8" || name == identByte.Name
 }
 
 func isIdent(expr ast.Expr, name string) bool {

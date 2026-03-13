@@ -1,6 +1,7 @@
 package iprototest
 
 import (
+	"database/sql"
 	"encoding/hex"
 	"errors"
 	"testing"
@@ -127,6 +128,29 @@ func TestMyStructMarshalUnmarshal(t *testing.T) {
 		TimeNanoExplicit: time.Unix(1733506469, 987654321),
 		TimeUnix:         time.Unix(1733506469, 0),
 		TimeAlias:        time.Unix(1733506469, 555555555),
+		// Optional pointer types
+		OptionalInt:       &[]int{42}[0],
+		OptionalIntNil:    nil,
+		OptionalStr:       &[]string{"hello"}[0],
+		OptionalStrNil:    nil,
+		OptionalStruct:    &Ints{Uint16: 12345},
+		OptionalStructNil: nil,
+		// Optional sql.Null types
+		OptionalNullStr:      sql.NullString{String: "world", Valid: true},
+		OptionalNullStrEmpty: sql.NullString{Valid: false},
+		OptionalNullInt64:    sql.NullInt64{Int64: 123456789, Valid: true},
+		OptionalNullInt64Nil: sql.NullInt64{Valid: false},
+		OptionalNullBool:     sql.NullBool{Bool: true, Valid: true},
+		OptionalNullFloat64:  sql.NullFloat64{Float64: 3.14, Valid: true},
+		OptionalNullInt32:    sql.NullInt32{Int32: -42, Valid: true},
+		OptionalNullInt16:    sql.NullInt16{Int16: 1234, Valid: true},
+		OptionalNullByte:     sql.NullByte{Byte: 0xAB, Valid: true},
+		OptionalNullTime:     sql.NullTime{Time: time.Unix(1733506469, 123456789), Valid: true},
+		OptionalNullTimeU32:  sql.NullTime{Time: time.Unix(1733506469, 0), Valid: true},
+		OptionalNullGeneric:  sql.Null[int64]{V: 999, Valid: true},
+		OptionalNullFloat32:  sql.Null[float32]{V: 2.5, Valid: true},
+		// Backwards compatibility: non-optional sql.Null (serialized as plain struct)
+		NonOptionalNull: sql.NullString{String: "compat", Valid: true},
 	}
 
 	bytes, err := orig.MarshalIProto(nil)

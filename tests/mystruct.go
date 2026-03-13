@@ -1,6 +1,7 @@
 package iprototest
 
 import (
+	"database/sql"
 	"time"
 
 	"github.com/my-mail-ru/go-iproto/tests/innerpkg"
@@ -87,4 +88,29 @@ type MyStruct struct {
 	TimeNanoExplicit      time.Time                      `iproto:"i64"`
 	TimeUnix              time.Time                      `iproto:"u32"`
 	TimeAlias             myTime                         //
+	// Optional pointer types
+	OptionalInt       *int    `iproto:"optional,ber"`
+	OptionalIntNil    *int    `iproto:"optional,ber"`
+	OptionalStr       *string `iproto:"optional,u8"`
+	OptionalStrNil    *string `iproto:"optional,u8"`
+	OptionalStruct    *Ints   `iproto:"optional"`
+	OptionalStructNil *Ints   `iproto:"optional"`
+	// Optional sql.Null types
+	OptionalNullStr      sql.NullString    `iproto:"optional,ber"`
+	OptionalNullStrEmpty sql.NullString    `iproto:"optional,ber"`
+	OptionalNullInt64    sql.NullInt64     `iproto:"optional"`
+	OptionalNullInt64Nil sql.NullInt64     `iproto:"optional"`
+	OptionalNullBool     sql.NullBool      `iproto:"optional"`
+	OptionalNullFloat64  sql.NullFloat64   `iproto:"optional"`
+	OptionalNullInt32    sql.NullInt32     `iproto:"optional"`
+	OptionalNullInt16    sql.NullInt16     `iproto:"optional"`
+	OptionalNullByte     sql.NullByte      `iproto:"optional"`
+	OptionalNullTime     sql.NullTime      `iproto:"optional"`
+	OptionalNullTimeU32  sql.NullTime      `iproto:"optional,u32"`
+	OptionalNullGeneric  sql.Null[int64]   `iproto:"optional"`
+	OptionalNullFloat32  sql.Null[float32] `iproto:"optional"`
+	// Backwards compatibility: non-optional pointer (existing behavior)
+	// IntPtr and StructPtr already test this above
+	// Backwards compatibility: sql.Null without optional tag (parsed as struct)
+	NonOptionalNull sql.NullString //
 }

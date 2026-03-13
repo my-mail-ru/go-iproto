@@ -294,16 +294,16 @@ func (f Float) EmitUnmarshaler(x ast.Expr, block []ast.Stmt) []ast.Stmt {
 	bitsVar := varFromExpr(x, "bits")
 	bitsFunc := exprFloat64frombits
 	typeExpr := identUint64
-	floatType := "float64"
+	floatIdent := identFloat64
 
 	if f.Size == 4 {
 		bitsFunc = exprFloat32frombits
 		typeExpr = identUint32
-		floatType = "float32"
+		floatIdent = identFloat32
 	}
 
 	val := exprCall(bitsFunc, bitsVar)
-	if !isIdent(f.TypeExpr, floatType) {
+	if !isIdent(f.TypeExpr, floatIdent.Name) {
 		val = exprCall(f.TypeExpr, val)
 	}
 
@@ -515,7 +515,7 @@ type TimeUnixNanoI64 struct{}
 
 func (TimeUnixNanoI64) EmitMarshaler(x ast.Expr, block []ast.Stmt) []ast.Stmt {
 	nanoVar := varFromExpr(x, "nano")
-	block = append(block, stmtDefine(nanoVar, exprCall(exprDot(x, ast.NewIdent("UnixNano")))))
+	block = append(block, stmtDefine(nanoVar, exprCall(exprDot(x, identUnixNano))))
 
 	return Integer{TypeExpr: identInt64, Size: 8}.EmitMarshaler(nanoVar, block)
 }
@@ -533,7 +533,7 @@ type TimeUnixU32 struct{}
 
 func (TimeUnixU32) EmitMarshaler(x ast.Expr, block []ast.Stmt) []ast.Stmt {
 	secVar := varFromExpr(x, "sec")
-	block = append(block, stmtDefine(secVar, exprCall(identUint32, exprCall(exprDot(x, ast.NewIdent("Unix"))))))
+	block = append(block, stmtDefine(secVar, exprCall(identUint32, exprCall(exprDot(x, identUnix)))))
 
 	return Integer{TypeExpr: identUint32, Size: 4}.EmitMarshaler(secVar, block)
 }
@@ -543,6 +543,113 @@ func (TimeUnixU32) EmitUnmarshaler(x ast.Expr, block []ast.Stmt) []ast.Stmt {
 	block = Integer{TypeExpr: identUint32, Size: 4}.EmitUnmarshaler(secVar, block)
 
 	return emitVarAssign(x, exprCall(exprTimeUnix, exprCall(identInt64, secVar), lit0), block)
+}
+
+// OptionalPointer wraps a pointer type with a presence byte.
+// Marshal: if pointer is nil, writes 0; otherwise writes 1 followed by the value.
+// Unmarshal: reads presence byte; if 0, sets nil; if 1, allocates and reads value.
+type OptionalPointer struct {
+	Type     Type     // inner type (what the pointer points to)
+	TypeExpr ast.Expr // the type being pointed to
+}
+
+func (o OptionalPointer) EmitMarshaler(x ast.Expr, block []ast.Stmt) []ast.Stmt {
+	valBody := o.Type.EmitMarshaler(&ast.ParenExpr{
+		X: &ast.StarExpr{X: x},
+	}, emitAppendBuf([]ast.Expr{identBuf, lit1}, token.NoPos, nil))
+
+	if valBody == nil {
+		return nil
+	}
+
+	return append(block, &ast.IfStmt{
+		Cond: &ast.BinaryExpr{
+			Op: token.EQL,
+			X:  x,
+			Y:  identNil,
+		},
+		Body: &ast.BlockStmt{
+			List: emitAppendBuf([]ast.Expr{identBuf, lit0}, token.NoPos, nil),
+		},
+		Else: &ast.BlockStmt{
+			List: valBody,
+		},
+	})
+}
+
+func (o OptionalPointer) EmitUnmarshaler(x ast.Expr, block []ast.Stmt) []ast.Stmt {
+	block = emitBoundCheck(exprLenBuf, token.LSS, lit1, false, astToSourceUpper(x), block)
+
+	valBody := emitVarAssign(x, exprCall(identNew, o.TypeExpr), newBlock())
+	valBody = o.Type.EmitUnmarshaler(&ast.StarExpr{X: x}, valBody)
+
+	return append(block, &ast.IfStmt{
+		Cond: &ast.BinaryExpr{
+			Op: token.NEQ,
+			X:  exprBuf0,
+			Y:  lit0,
+		},
+		Body: &ast.BlockStmt{List: append([]ast.Stmt{stmtBufRewind(lit1)}, valBody...)},
+		Else: &ast.BlockStmt{
+			List: append(
+				emitVarAssign(x, identNil, nil),
+				stmtBufRewind(lit1),
+			),
+		},
+	})
+}
+
+// OptionalNull wraps a sql.Null* type with a presence byte.
+// Marshal: if .Valid is false, writes 0; otherwise writes 1 followed by the encoded value field.
+// Unmarshal: reads presence byte; if 0, sets Valid=false; if 1, sets Valid=true and reads value.
+type OptionalNull struct {
+	Type       Type       // inner type for the value field
+	ValueField *ast.Ident // field name containing the value (e.g. "String", "Int64", "V")
+}
+
+func (o OptionalNull) EmitMarshaler(x ast.Expr, block []ast.Stmt) []ast.Stmt {
+	valBody := o.Type.EmitMarshaler(
+		exprDot(x, o.ValueField),
+		emitAppendBuf([]ast.Expr{identBuf, lit1}, token.NoPos, nil),
+	)
+
+	if valBody == nil {
+		return nil
+	}
+
+	return append(block, &ast.IfStmt{
+		Cond: exprDot(x, identValid),
+		Body: &ast.BlockStmt{List: valBody},
+		Else: &ast.BlockStmt{
+			List: emitAppendBuf([]ast.Expr{identBuf, lit0}, token.NoPos, nil),
+		},
+	})
+}
+
+func (o OptionalNull) EmitUnmarshaler(x ast.Expr, block []ast.Stmt) []ast.Stmt {
+	block = emitBoundCheck(exprLenBuf, token.LSS, lit1, false, astToSourceUpper(x), block)
+
+	valBody := emitVarAssign(
+		fieldSelector(x, identValid),
+		identTrue,
+		newBlock(),
+	)
+	valBody = o.Type.EmitUnmarshaler(fieldSelector(x, o.ValueField), valBody)
+
+	return append(block, &ast.IfStmt{
+		Cond: &ast.BinaryExpr{
+			Op: token.NEQ,
+			X:  exprBuf0,
+			Y:  lit0,
+		},
+		Body: &ast.BlockStmt{List: append([]ast.Stmt{stmtBufRewind(lit1)}, valBody...)},
+		Else: &ast.BlockStmt{
+			List: append(
+				emitVarAssign(fieldSelector(x, identValid), identFalse, nil),
+				stmtBufRewind(lit1),
+			),
+		},
+	})
 }
 
 type Dumb struct{}
