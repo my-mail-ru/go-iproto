@@ -126,6 +126,14 @@ func TestMyStructMarshalUnmarshal(t *testing.T) {
 			Data: "barbaz",
 			Type: EventType("STRING"),
 		}},
+		GenericPair: Pair[string, int32]{
+			First:  "hello",
+			Second: 1000,
+		},
+		GenericPairComplex: Pair[[]string, int32]{
+			First:  []string{"a", "b"},
+			Second: -42,
+		},
 		TimeNano:         time.Unix(1733506469, 123456789),
 		TimeNanoExplicit: time.Unix(1733506469, 987654321),
 		TimeUnix:         time.Unix(1733506469, 0),

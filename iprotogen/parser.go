@@ -834,12 +834,12 @@ func (pp *pkgParser) parseType(expr ast.Expr, goType types.Type, tag *structtag.
 	case *types.Map:
 		ret, err = pp.parseMap(expr, goType, tag)
 	case *types.Struct:
-		promotion, promErr := resolveTagPromotion(marshalerRecvType, tag)
+		promotions, promErr := resolveTagPromotion(marshalerRecvType, tag)
 		if promErr != nil {
 			return nil, fmt.Errorf("%s: %w", astToSource(expr), promErr)
 		}
 
-		ret, err = pp.parseStruct(expr, goType, needStructLit, promotion)
+		ret, err = pp.parseStruct(expr, goType, needStructLit, promotions)
 	case *types.Pointer:
 		ret, err = pp.parsePointer(expr, goType, tag)
 
@@ -864,20 +864,70 @@ func rejectTag(expr ast.Expr, tag *structtag.Tag) error {
 	return nil
 }
 
-// tagPromotion specifies a tag to promote to a specific struct field.
-// This is used for generic structs where the outer tag applies to the field
-// whose type comes from a type parameter (e.g. Event[string] `iproto:"u16"`
-// promotes "u16" to the Data field of type T).
-type tagPromotion struct {
-	fieldIndex int
-	tag        *structtag.Tag
+// usesTypeParam reports whether a type references a type parameter.
+func usesTypeParam(t types.Type) bool {
+	switch t := t.(type) {
+	case *types.TypeParam:
+		return true
+	case *types.Named:
+		if ta := t.TypeArgs(); ta != nil {
+			for i := range ta.Len() {
+				if usesTypeParam(ta.At(i)) {
+					return true
+				}
+			}
+		}
+
+		return false
+	case *types.Slice:
+		return usesTypeParam(t.Elem())
+	case *types.Array:
+		return usesTypeParam(t.Elem())
+	case *types.Map:
+		return usesTypeParam(t.Key()) || usesTypeParam(t.Elem())
+	case *types.Pointer:
+		return usesTypeParam(t.Elem())
+	default:
+		return false
+	}
+}
+
+// tagWidth returns the number of tag components a type consumes when serialized.
+// This is used to split the outer tag among multiple type-parameter fields.
+func tagWidth(goType types.Type) int {
+	if resolveHardcodedType(goType) != nil {
+		return 1
+	}
+
+	switch t := goType.Underlying().(type) {
+	case *types.Basic:
+		return 1
+	case *types.Slice:
+		if basic, ok := t.Elem().(*types.Basic); ok && basic.Kind() == types.Uint8 {
+			return 1 // []byte: length prefix only
+		}
+
+		return 1 + tagWidth(t.Elem())
+	case *types.Array:
+		if basic, ok := t.Elem().(*types.Basic); ok && basic.Kind() == types.Uint8 {
+			return 0 // [N]byte: no tags
+		}
+
+		return tagWidth(t.Elem())
+	case *types.Map:
+		return 1 + tagWidth(t.Key()) + tagWidth(t.Elem())
+	case *types.Pointer:
+		return tagWidth(t.Elem())
+	default:
+		return 0
+	}
 }
 
 // resolveTagPromotion checks whether a tag on a struct type can be promoted
-// to a field that uses a type parameter. Returns nil if the tag is empty.
-// Returns an error if the tag is non-empty but promotion is not possible
-// (non-generic struct or no type-parameter fields).
-func resolveTagPromotion(namedType types.Type, tag *structtag.Tag) (*tagPromotion, error) {
+// to fields that use type parameters. Returns nil if the tag is empty.
+// Tag components are split among type-parameter fields left-to-right,
+// each field consuming tagWidth(concreteType) components.
+func resolveTagPromotion(namedType types.Type, tag *structtag.Tag) (map[int]*structtag.Tag, error) {
 	if tag.Name == "" && len(tag.Options) == 0 {
 		return nil, nil
 	}
@@ -899,26 +949,62 @@ func resolveTagPromotion(namedType types.Type, tag *structtag.Tag) (*tagPromotio
 		return nil, errors.New("tags are not supported for this type")
 	}
 
-	fieldIdx := -1
+	// instantiated struct has the concrete field types
+	st, ok := named.Underlying().(*types.Struct)
+	if !ok {
+		return nil, errors.New("tags are not supported for this type")
+	}
+
+	type promotableField struct {
+		index int
+		width int
+	}
+
+	var promotable []promotableField
 
 	for i := range originSt.NumFields() {
-		if _, isTP := originSt.Field(i).Type().(*types.TypeParam); isTP {
-			if fieldIdx >= 0 {
-				return nil, errors.New("tag promotion is ambiguous: multiple fields use type parameters")
-			}
-
-			fieldIdx = i
+		if usesTypeParam(originSt.Field(i).Type()) {
+			w := tagWidth(st.Field(i).Type())
+			promotable = append(promotable, promotableField{index: i, width: w})
 		}
 	}
 
-	if fieldIdx < 0 {
+	if len(promotable) == 0 {
 		return nil, errors.New("tags are not supported: no fields use type parameters")
 	}
 
-	return &tagPromotion{
-		fieldIndex: fieldIdx,
-		tag:        tag,
-	}, nil
+	// flatten tag into components and split among promotable fields
+	components := make([]string, 0, 1+len(tag.Options))
+	components = append(components, tag.Name)
+	components = append(components, tag.Options...)
+
+	totalWidth := 0
+	for _, pf := range promotable {
+		totalWidth += pf.width
+	}
+
+	if len(components) != totalWidth {
+		return nil, fmt.Errorf("tag has %d component(s) but type parameter fields require %d", len(components), totalWidth)
+	}
+
+	promotions := make(map[int]*structtag.Tag, len(promotable))
+	pos := 0
+
+	for _, pf := range promotable {
+		t := &structtag.Tag{Key: tag.Key}
+		if pf.width > 0 {
+			t.Name = components[pos]
+			if pf.width > 1 {
+				t.Options = components[pos+1 : pos+pf.width]
+			}
+
+			pos += pf.width
+		}
+
+		promotions[pf.index] = t
+	}
+
+	return promotions, nil
 }
 
 type intParams struct {
@@ -1289,7 +1375,37 @@ func (pp *pkgParser) parseMap(expr ast.Expr, mapType *types.Map, tag *structtag.
 	}, nil
 }
 
-func (pp *pkgParser) parseStruct(expr ast.Expr, st *types.Struct, needStructLit bool, promotion *tagPromotion) (Type, error) {
+// resolveFieldTag returns the iproto tag for a struct field, taking into account
+// promoted tags from generic type instantiations. It warns if both promoted and
+// explicit tags exist for the same field.
+func (pp *pkgParser) resolveFieldTag(field *types.Var, fieldIndex int, st *types.Struct, promotions map[int]*structtag.Tag) (*structtag.Tag, error) {
+	if promTag, ok := promotions[fieldIndex]; ok {
+		if allTags := st.Tag(fieldIndex); allTags != "" {
+			if tags, err := structtag.Parse(allTags); err == nil {
+				if fieldTag, _ := tags.Get(IProtoTag); fieldTag != nil {
+					log.Printf("[WARN] %s: field %s: promoted tag overrides explicit field tag", pp.filenameLine(field), field.Name())
+				}
+			}
+		}
+
+		return promTag, nil
+	}
+
+	if allTags := st.Tag(fieldIndex); allTags != "" {
+		tags, err := structtag.Parse(allTags)
+		if err != nil {
+			return nil, newErrorWithPos(field, fmt.Errorf("field %s has invalid tag %s: %w", field.Name(), allTags, err))
+		}
+
+		tag, _ := tags.Get(IProtoTag)
+
+		return tag, nil
+	}
+
+	return nil, nil
+}
+
+func (pp *pkgParser) parseStruct(expr ast.Expr, st *types.Struct, needStructLit bool, promotions map[int]*structtag.Tag) (Type, error) {
 	numFields := st.NumFields()
 	fields := make([]StructField, 0, numFields)
 
@@ -1297,17 +1413,9 @@ func (pp *pkgParser) parseStruct(expr ast.Expr, st *types.Struct, needStructLit 
 		field := st.Field(i)
 		fieldName := field.Name()
 
-		tag := (*structtag.Tag)(nil)
-
-		if promotion != nil && i == promotion.fieldIndex {
-			tag = promotion.tag
-		} else if allTags := st.Tag(i); allTags != "" {
-			tags, err := structtag.Parse(allTags)
-			if err != nil {
-				return nil, newErrorWithPos(field, fmt.Errorf("field %s has invalid tag %s: %w", fieldName, allTags, err))
-			}
-
-			tag, _ = tags.Get(IProtoTag)
+		tag, err := pp.resolveFieldTag(field, i, st, promotions)
+		if err != nil {
+			return nil, err
 		}
 
 		noTag := tag == nil

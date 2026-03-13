@@ -313,6 +313,33 @@ func (recvMyStruct MyStruct) MarshalIProto(buf []byte) ([]byte, error) {
 		buf = iproto.EncodeBER(buf, uint64(len(elemRecvMyStruct_GenericSlice.Type)))
 		buf = append(buf, elemRecvMyStruct_GenericSlice.Type...)
 	}
+	if len(recvMyStruct.GenericPair.First) > 255 {
+		return nil, fmt.Errorf("MarshalIProto: Len(recvMyStruct.GenericPair.First): %w: %d > %d", iproto.ErrOverflow, len(recvMyStruct.GenericPair.First), 255)
+	}
+	buf = append(buf, byte(len(recvMyStruct.GenericPair.First)))
+	buf = append(buf, recvMyStruct.GenericPair.First...)
+	if recvMyStruct.GenericPair.Second < -32768 {
+		return nil, fmt.Errorf("MarshalIProto: RecvMyStruct.GenericPair.Second: %w: %d < %d", iproto.ErrOverflow, recvMyStruct.GenericPair.Second, -32768)
+	}
+	if recvMyStruct.GenericPair.Second > 32767 {
+		return nil, fmt.Errorf("MarshalIProto: RecvMyStruct.GenericPair.Second: %w: %d > %d", iproto.ErrOverflow, recvMyStruct.GenericPair.Second, 32767)
+	}
+	buf = append(buf, byte(recvMyStruct.GenericPair.Second), byte(recvMyStruct.GenericPair.Second>>8))
+	buf = iproto.EncodeBER(buf, uint64(len(recvMyStruct.GenericPairComplex.First)))
+	for _, elemRecvMyStruct_GenericPairComplex_First := range recvMyStruct.GenericPairComplex.First {
+		if len(elemRecvMyStruct_GenericPairComplex_First) > 255 {
+			return nil, fmt.Errorf("MarshalIProto: Len(elemRecvMyStruct_GenericPairComplex_First): %w: %d > %d", iproto.ErrOverflow, len(elemRecvMyStruct_GenericPairComplex_First), 255)
+		}
+		buf = append(buf, byte(len(elemRecvMyStruct_GenericPairComplex_First)))
+		buf = append(buf, elemRecvMyStruct_GenericPairComplex_First...)
+	}
+	if recvMyStruct.GenericPairComplex.Second < -32768 {
+		return nil, fmt.Errorf("MarshalIProto: RecvMyStruct.GenericPairComplex.Second: %w: %d < %d", iproto.ErrOverflow, recvMyStruct.GenericPairComplex.Second, -32768)
+	}
+	if recvMyStruct.GenericPairComplex.Second > 32767 {
+		return nil, fmt.Errorf("MarshalIProto: RecvMyStruct.GenericPairComplex.Second: %w: %d > %d", iproto.ErrOverflow, recvMyStruct.GenericPairComplex.Second, 32767)
+	}
+	buf = append(buf, byte(recvMyStruct.GenericPairComplex.Second), byte(recvMyStruct.GenericPairComplex.Second>>8))
 	nanoRecvMyStruct_TimeNano := recvMyStruct.TimeNano.UnixNano()
 	buf = append(buf, byte(nanoRecvMyStruct_TimeNano), byte(nanoRecvMyStruct_TimeNano>>8), byte(nanoRecvMyStruct_TimeNano>>16), byte(nanoRecvMyStruct_TimeNano>>24), byte(nanoRecvMyStruct_TimeNano>>32), byte(nanoRecvMyStruct_TimeNano>>40), byte(nanoRecvMyStruct_TimeNano>>48), byte(nanoRecvMyStruct_TimeNano>>56))
 	nanoRecvMyStruct_TimeNanoExplicit := recvMyStruct.TimeNanoExplicit.UnixNano()
@@ -1283,6 +1310,47 @@ func (recv_MyStruct *MyStruct) UnmarshalIProto(buf []byte) ([]byte, error) {
 		recv_MyStruct.GenericSlice[iRecv_MyStruct_GenericSlice].Type = EventType(buf[:lenRecv_MyStruct_GenericSlice_iRecv_MyStruct_GenericSlice__Type])
 		buf = buf[lenRecv_MyStruct_GenericSlice_iRecv_MyStruct_GenericSlice__Type:]
 	}
+	if len(buf) < 1 {
+		return nil, fmt.Errorf("UnmarshalIProto: LenRecv_MyStruct_GenericPair_First: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+	}
+	lenRecv_MyStruct_GenericPair_First := int(buf[0])
+	buf = buf[1:]
+	if len(buf) < lenRecv_MyStruct_GenericPair_First {
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.GenericPair.First: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_GenericPair_First)
+	}
+	recv_MyStruct.GenericPair.First = string(buf[:lenRecv_MyStruct_GenericPair_First])
+	buf = buf[lenRecv_MyStruct_GenericPair_First:]
+	if len(buf) < 2 {
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.GenericPair.Second: %w: %d < %d", iproto.ErrOverflow, len(buf), 2)
+	}
+	recv_MyStruct.GenericPair.Second = int32(int16(binary.LittleEndian.Uint16(buf)))
+	buf = buf[2:]
+	u64, buf, err = iproto.DecodeBER(buf)
+	if err != nil {
+		return nil, err
+	}
+	lenRecv_MyStruct_GenericPairComplex_First := int(u64)
+	if len(buf) < lenRecv_MyStruct_GenericPairComplex_First {
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.GenericPairComplex.First: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_GenericPairComplex_First)
+	}
+	recv_MyStruct.GenericPairComplex.First = make([]string, lenRecv_MyStruct_GenericPairComplex_First)
+	for iRecv_MyStruct_GenericPairComplex_First := 0; iRecv_MyStruct_GenericPairComplex_First < lenRecv_MyStruct_GenericPairComplex_First; iRecv_MyStruct_GenericPairComplex_First++ {
+		if len(buf) < 1 {
+			return nil, fmt.Errorf("UnmarshalIProto: LenRecv_MyStruct_GenericPairComplex_First_iRecv_MyStruct_GenericPairComplex_First_: %w: %d < %d", iproto.ErrOverflow, len(buf), 1)
+		}
+		lenRecv_MyStruct_GenericPairComplex_First_iRecv_MyStruct_GenericPairComplex_First_ := int(buf[0])
+		buf = buf[1:]
+		if len(buf) < lenRecv_MyStruct_GenericPairComplex_First_iRecv_MyStruct_GenericPairComplex_First_ {
+			return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.GenericPairComplex.First[iRecv_MyStruct_GenericPairComplex_First]: %w: %d < %d", iproto.ErrOverflow, len(buf), lenRecv_MyStruct_GenericPairComplex_First_iRecv_MyStruct_GenericPairComplex_First_)
+		}
+		recv_MyStruct.GenericPairComplex.First[iRecv_MyStruct_GenericPairComplex_First] = string(buf[:lenRecv_MyStruct_GenericPairComplex_First_iRecv_MyStruct_GenericPairComplex_First_])
+		buf = buf[lenRecv_MyStruct_GenericPairComplex_First_iRecv_MyStruct_GenericPairComplex_First_:]
+	}
+	if len(buf) < 2 {
+		return nil, fmt.Errorf("UnmarshalIProto: Recv_MyStruct.GenericPairComplex.Second: %w: %d < %d", iproto.ErrOverflow, len(buf), 2)
+	}
+	recv_MyStruct.GenericPairComplex.Second = int32(int16(binary.LittleEndian.Uint16(buf)))
+	buf = buf[2:]
 	if len(buf) < 8 {
 		return nil, fmt.Errorf("UnmarshalIProto: NanoRecv_MyStruct_TimeNano: %w: %d < %d", iproto.ErrOverflow, len(buf), 8)
 	}

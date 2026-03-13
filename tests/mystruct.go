@@ -46,6 +46,11 @@ type Event[T any] struct {
 	Type EventType `iproto:"ber"`
 }
 
+type Pair[A, B any] struct {
+	First  A
+	Second B
+}
+
 //adv:iproto:
 type MyStruct struct {
 	Embedded
@@ -86,6 +91,8 @@ type MyStruct struct {
 	GenericComplex        Event[Ints]                    //
 	GenericSimple         Event[string]                  `iproto:"u16"`
 	GenericSlice          []Event[string]                `iproto:"u16,u8"`
+	GenericPair           Pair[string, int32]            `iproto:"u8,i16"`
+	GenericPairComplex    Pair[[]string, int32]          `iproto:"ber,u8,i16"`
 	TimeNano              time.Time                      //
 	TimeNanoExplicit      time.Time                      `iproto:"i64"`
 	TimeUnix              time.Time                      `iproto:"u32"`
