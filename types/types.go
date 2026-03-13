@@ -18,6 +18,9 @@ type (
 	Float64 float64
 )
 
+//adv:iproto:
+type Bool bool
+
 //adv:iproto:"ber"
 type (
 	BER    uint64

@@ -315,10 +315,12 @@ func (f Float) EmitUnmarshaler(x ast.Expr, block []ast.Stmt) []ast.Stmt {
 }
 
 // Bool represents a value with an underlying type bool.
-// When decoding, False byte is decoded as false, and anything else as true (not only the True byte)
+// TypeExpr is the Go type expression (e.g. identBool for bool, or a defined type like MyBool).
+// When decoding, False byte is decoded as false, and anything else as true (not only the True byte).
 type Bool struct {
-	True  *ast.BasicLit
-	False *ast.BasicLit
+	TypeExpr ast.Expr
+	True     *ast.BasicLit
+	False    *ast.BasicLit
 }
 
 func (b Bool) EmitMarshaler(x ast.Expr, block []ast.Stmt) []ast.Stmt {
@@ -336,11 +338,17 @@ func (b Bool) EmitMarshaler(x ast.Expr, block []ast.Stmt) []ast.Stmt {
 func (b Bool) EmitUnmarshaler(x ast.Expr, block []ast.Stmt) []ast.Stmt {
 	block = emitBoundCheck(exprLenBuf, token.LSS, lit1, false, astToSourceUpper(x), block)
 
-	block = emitVarAssign(x, &ast.BinaryExpr{
+	val := ast.Expr(&ast.BinaryExpr{
 		X:  exprBuf0,
 		Op: token.NEQ,
 		Y:  b.False,
-	}, block)
+	})
+
+	if !isIdent(b.TypeExpr, "bool") {
+		val = exprCall(b.TypeExpr, val)
+	}
+
+	block = emitVarAssign(x, val, block)
 
 	return append(block, stmtBufRewind(lit1))
 }
