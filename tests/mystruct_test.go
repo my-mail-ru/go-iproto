@@ -55,6 +55,8 @@ func TestMyStructMarshalUnmarshal(t *testing.T) {
 		CustomBoolF:           false,
 		CustomCharBoolT:       true,
 		CustomCharBoolF:       false,
+		DefBoolT:              true,
+		DefBoolF:              false,
 		IntArray:              [4]int{1, -2, 3, -4},
 		UUID:                  [16]byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
 		MapStringString:       map[string]string{"test": "12345", "foobar": "baz"},
@@ -124,6 +126,14 @@ func TestMyStructMarshalUnmarshal(t *testing.T) {
 			Data: "barbaz",
 			Type: EventType("STRING"),
 		}},
+		GenericPair: Pair[string, int32]{
+			First:  "hello",
+			Second: 1000,
+		},
+		GenericPairComplex: Pair[[]string, int32]{
+			First:  []string{"a", "b"},
+			Second: -42,
+		},
 		TimeNano:         time.Unix(1733506469, 123456789),
 		TimeNanoExplicit: time.Unix(1733506469, 987654321),
 		TimeUnix:         time.Unix(1733506469, 0),
@@ -151,6 +161,21 @@ func TestMyStructMarshalUnmarshal(t *testing.T) {
 		OptionalNullFloat32:  sql.Null[float32]{V: 2.5, Valid: true},
 		// Backwards compatibility: non-optional sql.Null (serialized as plain struct)
 		NonOptionalNull: sql.NullString{String: "compat", Valid: true},
+		// Tag promotion: partial tags
+		GenericPairPartial: Pair[string, int32]{
+			First:  "hi",
+			Second: 12345,
+		},
+		// Tag promotion: sql.Null[T] with full tag
+		GenericNullPair: Pair[sql.Null[string], int32]{
+			First:  sql.Null[string]{V: "test", Valid: true},
+			Second: 42,
+		},
+		// Tag promotion: sql.Null[T] with partial fill
+		GenericNullEvent: Event[sql.Null[int64]]{
+			Data: sql.Null[int64]{V: 999, Valid: true},
+			Type: EventType("INT"),
+		},
 	}
 
 	bytes, err := orig.MarshalIProto(nil)

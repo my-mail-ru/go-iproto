@@ -46,6 +46,11 @@ type Event[T any] struct {
 	Type EventType `iproto:"ber"`
 }
 
+type Pair[A, B any] struct {
+	First  A
+	Second B
+}
+
 //adv:iproto:
 type MyStruct struct {
 	Embedded
@@ -71,6 +76,8 @@ type MyStruct struct {
 	CustomBoolF           bool                           `iproto:"true: 49, false: 48"`
 	CustomCharBoolT       bool                           `iproto:"true: 't', false: 'f'"`
 	CustomCharBoolF       bool                           `iproto:"true: 't', false: 'f'"`
+	DefBoolT              iprototypes.Bool               //
+	DefBoolF              iprototypes.Bool               //
 	IntArray              [4]int                         `iproto:"i32"`
 	UUID                  UUID                           //
 	MapStringString       map[string]string              //
@@ -84,6 +91,8 @@ type MyStruct struct {
 	GenericComplex        Event[Ints]                    //
 	GenericSimple         Event[string]                  `iproto:"u16"`
 	GenericSlice          []Event[string]                `iproto:"u16,u8"`
+	GenericPair           Pair[string, int32]            `iproto:"u8,i16"`
+	GenericPairComplex    Pair[[]string, int32]          `iproto:"ber,u8,i16"`
 	TimeNano              time.Time                      //
 	TimeNanoExplicit      time.Time                      `iproto:"i64"`
 	TimeUnix              time.Time                      `iproto:"u32"`
@@ -113,4 +122,10 @@ type MyStruct struct {
 	// IntPtr and StructPtr already test this above
 	// Backwards compatibility: sql.Null without optional tag (parsed as struct)
 	NonOptionalNull sql.NullString //
+	// Tag promotion: partial tags (fewer components than total width)
+	GenericPairPartial Pair[string, int32] `iproto:"u8"`
+	// Tag promotion: sql.Null[T] with full tag (optional + inner + other field)
+	GenericNullPair Pair[sql.Null[string], int32] `iproto:"optional,ber,i16"`
+	// Tag promotion: sql.Null[T] with partial fill (just "optional", inner uses default)
+	GenericNullEvent Event[sql.Null[int64]] `iproto:"optional"`
 }
